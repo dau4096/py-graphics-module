@@ -10,7 +10,8 @@ namespace graphics {
 
 	void init(std::string name, std::pair<int, int> resolution, std::pair<int, int> version);
 
-	int screenspaceShader(std::string filePath);
+	int loadShader(ShaderType type, std::string filePathA, std::string filePathB);
+	bool addUniformValue(int shaderID, std::string uniformName, float value);
 
 	void terminate();
 

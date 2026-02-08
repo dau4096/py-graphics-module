@@ -47,9 +47,10 @@ public:
 		GLint status;
 		glGetShaderiv(GLindex, GL_COMPILE_STATUS, &status);
 		if (!status) {
-			char buffer[512];
-			glGetShaderInfoLog(GLindex, 512, nullptr, buffer);
-			utils::cerr("Shader [", name, "] compile error: ", buffer);
+			char buffer[constants::misc::GL_ERROR_LENGTH];
+			glGetShaderInfoLog(GLindex, constants::misc::GL_ERROR_LENGTH, nullptr, buffer);
+			utils::cout("\nShader [", name, "] compile error:");
+			utils::cerr(buffer);
 			return false;
 		}
 		return true;

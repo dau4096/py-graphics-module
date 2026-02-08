@@ -12,10 +12,11 @@ enum UniformType {
 	UV_FVEC4, UV_IVEC4, //4D values
 };
 
-enum GraphicsMode {
-	GM_NONE,
-	GM_WORLDSPACE,
-	GM_SCREENSPACE
+enum ShaderType {
+	ST_NONE,
+	ST_WORLDSPACE,
+	ST_SCREENSPACE,
+	ST_COMPUTE
 };
 
 
@@ -29,6 +30,7 @@ namespace display {
 
 namespace misc {
 	//Access via constants::misc::value
+	constexpr int GL_ERROR_LENGTH = 1024;
 }
 
 }
