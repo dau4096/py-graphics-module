@@ -28,6 +28,12 @@ def main() -> None:
 	print(f"[PY ] Compute shader  [ID: {computeShaderID}] created!");
 
 
+
+	while (gl.window_open() and (not gl.is_key_held(gl.KEY_ESCAPE))): #Main program loop.
+		gl.poll_events(); #Look for events
+		gl.update_window(); #Update the screen with the next frame.
+
+
 	gl.terminate(); #Test shutdown
 	print("[PY ] Shut down module!");
 

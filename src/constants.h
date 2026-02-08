@@ -20,6 +20,59 @@ enum ShaderType {
 };
 
 
+
+
+inline std::unordered_map<int, bool> currentKeyMap = { //GLFW key enums and if they're pressed.
+	{GLFW_KEY_ESCAPE, false},		{GLFW_KEY_SPACE, false},
+	{GLFW_KEY_LEFT_SHIFT, false},	{GLFW_KEY_RIGHT_SHIFT, false},
+	{GLFW_KEY_LEFT_CONTROL, false},	{GLFW_KEY_RIGHT_CONTROL, false},
+	{GLFW_KEY_LEFT_ALT, false},		{GLFW_KEY_RIGHT_ALT, false},
+
+	{GLFW_KEY_1, false},			{GLFW_KEY_2, false},
+	{GLFW_KEY_3, false},			{GLFW_KEY_4, false},
+	{GLFW_KEY_5, false},			{GLFW_KEY_6, false},
+	{GLFW_KEY_7, false},			{GLFW_KEY_8, false},
+	{GLFW_KEY_9, false},			{GLFW_KEY_0, false},
+
+	{GLFW_KEY_Q, false}, 			{GLFW_KEY_W, false},
+	{GLFW_KEY_E, false}, 			{GLFW_KEY_R, false},
+	{GLFW_KEY_T, false}, 			{GLFW_KEY_Y, false},
+	{GLFW_KEY_U, false}, 			{GLFW_KEY_I, false},
+	{GLFW_KEY_O, false}, 			{GLFW_KEY_P, false},
+
+	{GLFW_KEY_A, false},			{GLFW_KEY_S, false},
+	{GLFW_KEY_D, false},			{GLFW_KEY_F, false},
+	{GLFW_KEY_G, false},			{GLFW_KEY_H, false},
+	{GLFW_KEY_J, false},			{GLFW_KEY_K, false},
+	{GLFW_KEY_L, false},			
+									{GLFW_KEY_Z, false},
+	{GLFW_KEY_X, false},			{GLFW_KEY_C, false},
+	{GLFW_KEY_V, false},			{GLFW_KEY_B, false},
+	{GLFW_KEY_N, false},			{GLFW_KEY_M, false},
+
+	{GLFW_KEY_ENTER, false},		{GLFW_KEY_BACKSPACE, false},
+	{GLFW_KEY_TAB, false},			{GLFW_KEY_MINUS, false},
+	{GLFW_KEY_EQUAL, false},		{GLFW_KEY_LEFT_BRACKET, false},
+	{GLFW_KEY_RIGHT_BRACKET, false},{GLFW_KEY_BACKSLASH, false},
+	{GLFW_KEY_SEMICOLON, false},	{GLFW_KEY_APOSTROPHE, false},
+	{GLFW_KEY_COMMA, false},		{GLFW_KEY_PERIOD, false},
+	{GLFW_KEY_SLASH, false},
+									{GLFW_KEY_UP, false},
+	{GLFW_KEY_DOWN, false},			{GLFW_KEY_LEFT, false},
+	{GLFW_KEY_RIGHT, false},
+									{GLFW_KEY_F1, false},
+	{GLFW_KEY_F2, false},			{GLFW_KEY_F3, false},
+	{GLFW_KEY_F4, false},			{GLFW_KEY_F5, false},
+	{GLFW_KEY_F6, false},			{GLFW_KEY_F7, false},
+	{GLFW_KEY_F8, false},			{GLFW_KEY_F9, false},
+	{GLFW_KEY_F10, false},			{GLFW_KEY_F11, false},
+	{GLFW_KEY_F12, false},
+};
+inline std::unordered_map<int, bool> previousKeyMap = currentKeyMap;
+
+
+
+
 namespace shared {inline bool verbose = false; /* Should module give console output for actions taken? */}
 
 namespace constants {

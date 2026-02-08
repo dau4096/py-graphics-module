@@ -10,7 +10,13 @@ void prepareOpenGL() {
 }
 
 
+void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	auto it = currentKeyMap.find(key);
+	if (it == currentKeyMap.end()) {return;}
 
+	if (action == GLFW_PRESS) {it->second = true;} 
+	else if (action == GLFW_RELEASE) {it->second = false;}
+}
 
 
 namespace compiler {
@@ -131,6 +137,7 @@ void init(std::string name, std::pair<int, int> resolution, std::pair<int, int> 
 		utils::cerr("Failed to create window");
 	}
 	glfwMakeContextCurrent(shared::window);
+	glfwSetKeyCallback(shared::window, glfwKeyCallback);
 
 
 	//GLEW
