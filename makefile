@@ -9,7 +9,8 @@ PYEXT       := $(shell $(PYTHON)-config --extension-suffix)
 GLFW_CFLAGS := $(shell pkg-config --cflags glfw3)
 GLFW_LIBS   := $(shell pkg-config --libs glfw3)
 
-OPENGL_LIBS := -lGL
+GLEW_LIBS := -lGLEW
+OPENGL_LIBS := -lGL -lGLU
 
 TARGET      := gl$(PYEXT)
 SOURCES     := gl.cpp src/graphics.cpp
@@ -19,7 +20,7 @@ all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
 	$(CXX) $(LDFLAGS) -o $@ $^ \
-	    $(GLFW_LIBS) $(OPENGL_LIBS)
+	    $(GLFW_LIBS) $(OPENGL_LIBS) $(GLEW_LIBS)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(PYBIND_INC) $(GLFW_CFLAGS) -c $< -o $@

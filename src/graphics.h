@@ -9,6 +9,9 @@
 namespace graphics {
 
 	void init(std::string name, std::pair<int, int> resolution, std::pair<int, int> version);
+
+	int screenspaceShader(std::string filePath);
+
 	void terminate();
 
 }

@@ -4,6 +4,8 @@
 #include "includes.h"
 
 
+namespace shared {inline bool verbose = false; /* Should module give console output for actions taken? */}
+
 namespace constants {
 
 namespace display {
@@ -15,5 +17,7 @@ namespace misc {
 }
 
 }
+
+
 
 #endif
