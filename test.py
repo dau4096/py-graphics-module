@@ -11,8 +11,8 @@ def main() -> None:
 	gl.verbose(); #Let it output to console.
 
 
-	gl.init(); #Test init func
-	#gl.init(name="My Window", resolution=(800, 600), version=(4, 6));
+	#gl.init(); #Test init func
+	gl.init(name="Test Window", resolution=(800, 600), version=(4, 6));
 	print("[PY ] Module initialised!");
 
 

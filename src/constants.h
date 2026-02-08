@@ -4,6 +4,21 @@
 #include "includes.h"
 
 
+enum UniformType {
+	UV_INVAL, //Invalid
+	UV_FLOAT, UV_INTEG, //1D values
+	UV_FVEC2, UV_IVEC2, //2D values
+	UV_FVEC3, UV_IVEC3, //3D values
+	UV_FVEC4, UV_IVEC4, //4D values
+};
+
+enum GraphicsMode {
+	GM_NONE,
+	GM_WORLDSPACE,
+	GM_SCREENSPACE
+};
+
+
 namespace shared {inline bool verbose = false; /* Should module give console output for actions taken? */}
 
 namespace constants {
