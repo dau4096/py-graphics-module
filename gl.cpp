@@ -20,7 +20,10 @@ void verbose() {
 
 
 void updateWindow() {
-	if (shared::window) {glfwSwapBuffers(shared::window);}
+	if (shared::window) {
+		glfwSwapBuffers(shared::window);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
 	else {utils::cerr("You need to initialise GL first → gl.init()");}
 }
 
@@ -115,14 +118,18 @@ PYBIND11_MODULE(gl, m) {
 		py::arg("filePathB") = ""
 	);
 
-	m.def("add_uniform_value", &graphics::addUniformValue, //gl.add_uniform_value(shader=0, name="", value=0.0);
-		py::arg("shader") = 0,
+	m.def("add_uniform_value", &graphics::addUniformValue, //gl.add_uniform_value(shader=-1, name="", value=0.0);
+		py::arg("shader") = -1,
 		py::arg("name") = "",
 		py::arg("value") = 0.0f
 	);
 
 	m.def("update_window", &updateWindow);
 	m.def("poll_events", &pollEvents);
+
+	m.def("configure", &graphics::configure,
+		py::arg("type") = ST_NONE
+	);
 
 
 

@@ -53,6 +53,7 @@ public:
 			utils::cerr(buffer);
 			return false;
 		}
+		glObjectLabel(GL_SHADER, GLindex, -1, name.c_str()); //Label it for debugging.
 		return true;
 	}
 };
@@ -68,13 +69,15 @@ private:
     inline GLint _convert(float value) {return static_cast<GLint>(value);}
 
 public:
+	ShaderType type = ST_NONE;
+
     ShaderProgram() = default;
 
     ~ShaderProgram() { //Delete instance callback
         if (_program) {glDeleteProgram(_program);}
     }
 
-    bool createProgram(std::vector<ShaderObject> shaders) {
+    bool createProgram(std::vector<ShaderObject> shaders, ShaderType type) {
         _program = glCreateProgram();
         for (auto& sh : shaders) {
             if (!sh.compile()) {return false;}
@@ -99,6 +102,7 @@ public:
         }
 
         _linked = true;
+        this->type = type;
         return true;
     }
 

@@ -12,6 +12,7 @@ namespace graphics {
 
 	int loadShader(ShaderType type, std::string filePathA, std::string filePathB);
 	bool addUniformValue(int shaderID, std::string uniformName, float value);
+	void configure(ShaderType type);
 
 	void terminate();
 

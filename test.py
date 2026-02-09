@@ -20,17 +20,22 @@ def main() -> None:
 	print(f"[PY ] Screenspace shader [ID: {sSpaceShaderID}] created!");
 
 
+	
 	wSpaceShaderID:int = gl.load_shader(gl.ST_WORLDSPACE, "shaders/worldspace.vert", "shaders/uv.3D.frag");
 	print(f"[PY ] Worldspace shader  [ID: {wSpaceShaderID}] created!");
 
 
 	computeShaderID:int = gl.load_shader(gl.ST_COMPUTE, "shaders/compute.comp");
 	print(f"[PY ] Compute shader  [ID: {computeShaderID}] created!");
+	
 
 
-
+	gl.configure(gl.ST_SCREENSPACE); #Set to use settings for screenspace shaders
 	while (gl.window_open() and (not gl.is_key_held(gl.KEY_ESCAPE))): #Main program loop.
 		gl.poll_events(); #Look for events
+
+
+
 		gl.update_window(); #Update the screen with the next frame.
 
 

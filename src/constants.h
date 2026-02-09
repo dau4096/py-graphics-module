@@ -84,6 +84,7 @@ namespace display {
 namespace misc {
 	//Access via constants::misc::value
 	constexpr int GL_ERROR_LENGTH = 1024;
+	constexpr bool PAUSE_ON_OPENGL_ERROR = true;
 }
 
 }
