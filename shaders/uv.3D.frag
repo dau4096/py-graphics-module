@@ -1,4 +1,4 @@
-/* uv.frag */
+/* uv.3D.frag */
 #version 460 core
 
 in vec2 fragUV;

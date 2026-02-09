@@ -16,17 +16,16 @@ def main() -> None:
 	print("[PY ] Module initialised!");
 
 
+
+	#Testing shader compilation
 	sSpaceShaderID:int = gl.load_shader(gl.ST_SCREENSPACE, "shaders/uv.2D.frag");
 	print(f"[PY ] Screenspace shader [ID: {sSpaceShaderID}] created!");
 
-
+	computeShaderID:int = gl.load_shader(gl.ST_COMPUTE, "shaders/compute.comp");
+	print(f"[PY ] Compute shader  [ID: {computeShaderID}] created!");
 	
 	wSpaceShaderID:int = gl.load_shader(gl.ST_WORLDSPACE, "shaders/worldspace.vert", "shaders/uv.3D.frag");
 	print(f"[PY ] Worldspace shader  [ID: {wSpaceShaderID}] created!");
-
-
-	computeShaderID:int = gl.load_shader(gl.ST_COMPUTE, "shaders/compute.comp");
-	print(f"[PY ] Compute shader  [ID: {computeShaderID}] created!");
 	
 
 

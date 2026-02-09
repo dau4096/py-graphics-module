@@ -90,10 +90,11 @@ int computeShader(std::string filePath) {
 	types::ShaderObject compute = types::ShaderObject(GL_COMPUTE_SHADER, compSource, utils::getFilename(filePath));
 	
 	types::ShaderProgram program;
-	program.createProgram({compute,}, ST_COMPUTE);
+	std::vector<types::ShaderObject> shaders = {compute,};
 
 	int shaderID = shared::shaders.size();
-	shared::shaders.emplace_back(program);
+	shared::shaders.emplace_back();
+	shared::shaders.back().createProgram(shaders, ST_COMPUTE);
 	return shaderID; //Shader reference for the python module.
 }
 
@@ -126,10 +127,11 @@ void main() {
 	types::ShaderObject fragment = types::ShaderObject(GL_FRAGMENT_SHADER, fragSource, utils::getFilename(filePath));
 	
 	types::ShaderProgram program;
-	program.createProgram({vertex, fragment,}, ST_SCREENSPACE);
+	std::vector<types::ShaderObject> shaders = {vertex, fragment,};
 
 	int shaderID = shared::shaders.size();
-	shared::shaders.emplace_back(program);
+	shared::shaders.emplace_back();
+	shared::shaders.back().createProgram(shaders, ST_SCREENSPACE);
 	return shaderID; //Shader reference for the python module.
 }
 
@@ -143,10 +145,11 @@ int worldspaceShader(std::string vertexFilePath, std::string fragmentFilePath) {
 	types::ShaderObject fragment = types::ShaderObject(GL_FRAGMENT_SHADER, fragSource, utils::getFilename(fragmentFilePath));
 	
 	types::ShaderProgram program;
-	program.createProgram({vertex, fragment,}, ST_WORLDSPACE);
+	std::vector<types::ShaderObject> shaders = {vertex, fragment,};
 
 	int shaderID = shared::shaders.size();
-	shared::shaders.emplace_back(program);
+	shared::shaders.emplace_back();
+	shared::shaders.back().createProgram(shaders, ST_WORLDSPACE);
 	return shaderID; //Shader reference for the python module.
 }
 

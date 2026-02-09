@@ -53,12 +53,16 @@ public:
 			utils::cerr(buffer);
 			return false;
 		}
-		glObjectLabel(GL_SHADER, GLindex, -1, name.c_str()); //Label it for debugging.
+		if (GLEW_KHR_debug || GLEW_VERSION_4_3) {
+			//Label it for debugging.
+		    glObjectLabel(GL_SHADER, GLindex, -1, name.c_str());
+		}
 		return true;
 	}
 };
 
 
+//Full shader program.
 class ShaderProgram {
 private:
     GLuint _program = 0u; //OpenGL index
@@ -69,15 +73,43 @@ private:
     inline GLint _convert(float value) {return static_cast<GLint>(value);}
 
 public:
-	ShaderType type = ST_NONE;
-
+	//Default creation
     ShaderProgram() = default;
 
-    ~ShaderProgram() { //Delete instance callback
-        if (_program) {glDeleteProgram(_program);}
+    //Stop shallow copying, delete the methods.
+    ShaderProgram(const ShaderProgram&) = delete;
+    ShaderProgram& operator=(const ShaderProgram&) = delete;
+
+    //Move constructor
+    ShaderProgram(ShaderProgram&& other) noexcept {
+        _program = other._program;
+        _linked = other._linked;
+        type = other.type;
+        _uniforms = std::move(other._uniforms);
+        other._program = 0;
     }
 
-    bool createProgram(std::vector<ShaderObject> shaders, ShaderType type) {
+    //Move operator
+    ShaderProgram& operator=(ShaderProgram&& other) noexcept {
+        if (this != &other) {
+            if (_program) glDeleteProgram(_program);
+            _program = other._program;
+            _linked = other._linked;
+            type = other.type;
+            _uniforms = std::move(other._uniforms);
+            other._program = 0;
+        }
+        return *this;
+    }
+
+    //Deletion
+    ~ShaderProgram() {
+        if (_program) glDeleteProgram(_program);
+    }
+
+	ShaderType type = ST_NONE;
+
+    bool createProgram(std::vector<ShaderObject>& shaders, ShaderType type) {
         _program = glCreateProgram();
         for (auto& sh : shaders) {
             if (!sh.compile()) {return false;}
