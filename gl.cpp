@@ -54,9 +54,9 @@ bool windowOpen() {
 }
 
 void requestClose() {
-    if (shared::window) {
-        glfwSetWindowShouldClose(shared::window, GLFW_TRUE);
-    }
+	if (shared::window) {
+		glfwSetWindowShouldClose(shared::window, GLFW_TRUE);
+	}
 }
 
 
@@ -65,7 +65,14 @@ void requestClose() {
 //// PYBIND11 STUFF ////
 //The module name in py is "gl".
 PYBIND11_MODULE(gl, m) {
-	m.doc() = "OpenGL py abstraction module";
+	py::options opt;
+- Poll inputs
+
+
+Requires;
+- OpenGL 3.3+
+- GLFW
+- GLEW
 
 	//Config
 	m.def("verbose", verbose); //gl.verbose() [Should the file give console output for actions taken?]
@@ -84,7 +91,22 @@ PYBIND11_MODULE(gl, m) {
 		.value("ST_NONE", ShaderType::ST_NONE)
 		.value("ST_WORLDSPACE", ShaderType::ST_WORLDSPACE)
 		.value("ST_SCREENSPACE", ShaderType::ST_SCREENSPACE)
-		.value("ST_COMPUTE", ShaderType::ST_COMPUTE)
+		.value("ST_NONE", 			ShaderType::ST_NONE)
+		.value("ST_WORLDSPACE", 	ShaderType::ST_WORLDSPACE)
+		.value("ST_SCREENSPACE", 	ShaderType::ST_SCREENSPACE)
+		.value("ST_COMPUTE", 		ShaderType::ST_COMPUTE)
+		.export_values();
+
+
+	//gl VAO formats
+	py::enum_<VAOFormat>(m, "VAOFormat") //VAO Format Enum
+		.value("VAO_EMPTY", 			VAOFormat::VAO_EMPTY)
+		.value("VAO_POS_ONLY", 			VAOFormat::VAO_POS_ONLY)
+		.value("VAO_POS_UV2D", 			VAOFormat::VAO_POS_UV2D)
+		.value("VAO_POS_UV3D", 			VAOFormat::VAO_POS_UV3D)
+		.value("VAO_POS_NORMAL", 		VAOFormat::VAO_POS_NORMAL)
+		.value("VAO_POS_UV2D_NORMAL", 	VAOFormat::VAO_POS_UV2D_NORMAL)
+		.value("VAO_POS_UV3D_NORMAL", 	VAOFormat::VAO_POS_UV3D_NORMAL)
 		.export_values();
 
 
@@ -94,9 +116,31 @@ PYBIND11_MODULE(gl, m) {
 	m.def("init", &graphics::init, //gl.init(name="", resolution=(1,1), version=(3,3))
 		py::arg("name") = "",
 		py::arg("resolution") = std::pair<int, int>{1, 1},
-		py::arg("version") = std::pair<int, int>{3, 3}
+		py::arg("version") = std::pair<int, int>{3, 3},
+		R"doc(
+Initialises the OpenGL context and its associated GLFW window, if required.
+
+Parameters
+----------
+name : str, optional
+	Window title.
+resolution : tuple[int, int], optional
+	Resolution of the window to open. If set to (1, 1) or below, window is automatically hidden.
+version : tuple[int, int], optional
+	OpenGL version Major|Minor. Assumed as CORE.
+
+Raises
+------
+RuntimeError
+	If GLFW fails to initialise or window fails to open.
+)doc"
 	);
-	m.def("terminate", &graphics::terminate); //gl.terminate()
+
+	m.def("terminate", &graphics::terminate, //gl.terminate()
+		R"doc(
+Terminates the GLFW window, and cleans up OpenGL objects.
+)doc"
+	); 
 
 	m.def("window_open", &windowOpen); //gl.window_open()
 
@@ -122,6 +166,22 @@ PYBIND11_MODULE(gl, m) {
 		py::arg("shader") = -1,
 		py::arg("name") = "",
 		py::arg("value") = 0.0f
+	);
+
+	m.def(
+		"add_vao",
+		[](int shader, VAOFormat format, py::list values) {
+			std::vector<float> vec = values.cast<std::vector<float>>();
+			graphics::addVAO(shader, format, vec);
+		},
+		py::arg("shader") = -1,
+		py::arg("format") = VAO_EMPTY,
+		py::arg("values") = py::list()
+	);
+
+	m.def("run", &graphics::runShader, //gl.run(shader=-1, dispatch=(0, 0, 0));
+		py::arg("shader") = -1,
+		py::arg("dispatch") = std::array<int, 3>{0, 0, 0}
 	);
 
 	m.def("update_window", &updateWindow);

@@ -28,14 +28,14 @@ def main() -> None:
 	print(f"[PY ] Worldspace shader  [ID: {wSpaceShaderID}] created!");
 	
 
-
 	gl.configure(gl.ST_SCREENSPACE); #Set to use settings for screenspace shaders
 	while (gl.window_open() and (not gl.is_key_held(gl.KEY_ESCAPE))): #Main program loop.
 		gl.poll_events(); #Look for events
 
-
+		gl.run(sSpaceShaderID);
 
 		gl.update_window(); #Update the screen with the next frame.
+
 
 
 	gl.terminate(); #Test shutdown

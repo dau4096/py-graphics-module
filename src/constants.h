@@ -16,9 +16,18 @@ enum ShaderType {
 	ST_NONE,
 	ST_WORLDSPACE,
 	ST_SCREENSPACE,
-	ST_COMPUTE
+	ST_COMPUTE,
 };
 
+enum VAOFormat {
+	//2D → UV.xy
+	//3D → UV.xy && textureID (example usage)
+	VAO_EMPTY,                               //No values
+	VAO_POS_ONLY,                            //Position
+	VAO_POS_UV2D,        VAO_POS_UV3D,       //Position, UV
+	VAO_POS_NORMAL,                          //Position, normal.
+	VAO_POS_UV2D_NORMAL, VAO_POS_UV3D_NORMAL //Position, UV, normal.
+};
 
 
 
@@ -72,6 +81,10 @@ inline std::unordered_map<int, bool> previousKeyMap = currentKeyMap;
 
 
 
+struct Attribute {
+	GLint size;
+};
+
 
 namespace shared {inline bool verbose = false; /* Should module give console output for actions taken? */}
 
@@ -79,12 +92,31 @@ namespace constants {
 
 namespace display {
 	//Access via constants::display::value
+	inline GLuint emptyVAO;
+
+	static const std::unordered_map<VAOFormat, size_t> vertexFormatSizeMap = {
+		{VAO_EMPTY, 0u}, {VAO_POS_ONLY, 3u}, {VAO_POS_NORMAL, 6u},
+		{VAO_POS_UV2D, 5u}, {VAO_POS_UV3D, 6u},
+		{VAO_POS_UV2D_NORMAL, 8u}, {VAO_POS_UV3D_NORMAL, 9u},
+	};
+	static const std::map<VAOFormat, std::vector<Attribute>> layouts = {
+		{VAO_EMPTY,			 	{              }},
+		{VAO_POS_ONLY,		 	{{3},          }},
+	    {VAO_POS_UV2D,       	{{3}, {2},     }},
+	    {VAO_POS_UV3D,       	{{3}, {3},     }},
+	    {VAO_POS_NORMAL,     	{{3}, {3},     }},
+	    {VAO_POS_UV2D_NORMAL,	{{3}, {2}, {3},}},
+	    {VAO_POS_UV3D_NORMAL,	{{3}, {3}, {3},}},
+	};
 }
 
 namespace misc {
 	//Access via constants::misc::value
 	constexpr int GL_ERROR_LENGTH = 1024;
 	constexpr bool PAUSE_ON_OPENGL_ERROR = true;
+
+	constexpr size_t MAX_SHADERS  = 32u;
+	constexpr size_t MAX_TEXTURES = 64u;
 }
 
 }

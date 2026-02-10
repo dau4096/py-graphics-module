@@ -5,6 +5,7 @@ using namespace std;
 
 
 
+namespace graphics {
 
 void APIENTRY openGLErrorCallback(
 		GLenum source,
@@ -59,9 +60,7 @@ void APIENTRY openGLErrorCallback(
 }
 
 
-
-
-void prepareOpenGL() {
+void prepareOpenGL(std::pair<int, int> windowRes) {
 	//Set up any requirements for the context.
 
 	//Debug settings
@@ -69,6 +68,11 @@ void prepareOpenGL() {
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback(openGLErrorCallback, nullptr);
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+
+	glViewport(0, 0, windowRes.first, windowRes.second);
+
+	//Create the empty VAO used in screenspace shaders
+	glGenVertexArrays(1, &constants::display::emptyVAO); //Yes technically not constant, but it will _NEVER_ change after now.
 }
 
 
@@ -79,6 +83,8 @@ void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
 	if (action == GLFW_PRESS) {it->second = true;} 
 	else if (action == GLFW_RELEASE) {it->second = false;}
 }
+
+
 
 
 namespace compiler {
@@ -92,9 +98,8 @@ int computeShader(std::string filePath) {
 	types::ShaderProgram program;
 	std::vector<types::ShaderObject> shaders = {compute,};
 
-	int shaderID = shared::shaders.size();
-	shared::shaders.emplace_back();
-	shared::shaders.back().createProgram(shaders, ST_COMPUTE);
+	int shaderID = shared::numberOfShaders;
+	shared::shaders[shared::numberOfShaders++].createProgram(shaders, ST_COMPUTE);
 	return shaderID; //Shader reference for the python module.
 }
 
@@ -129,9 +134,8 @@ void main() {
 	types::ShaderProgram program;
 	std::vector<types::ShaderObject> shaders = {vertex, fragment,};
 
-	int shaderID = shared::shaders.size();
-	shared::shaders.emplace_back();
-	shared::shaders.back().createProgram(shaders, ST_SCREENSPACE);
+	int shaderID = shared::numberOfShaders;
+	shared::shaders[shared::numberOfShaders++].createProgram(shaders, ST_SCREENSPACE);
 	return shaderID; //Shader reference for the python module.
 }
 
@@ -147,9 +151,8 @@ int worldspaceShader(std::string vertexFilePath, std::string fragmentFilePath) {
 	types::ShaderProgram program;
 	std::vector<types::ShaderObject> shaders = {vertex, fragment,};
 
-	int shaderID = shared::shaders.size();
-	shared::shaders.emplace_back();
-	shared::shaders.back().createProgram(shaders, ST_WORLDSPACE);
+	int shaderID = shared::numberOfShaders;
+	shared::shaders[shared::numberOfShaders++].createProgram(shaders, ST_WORLDSPACE);
 	return shaderID; //Shader reference for the python module.
 }
 
@@ -162,26 +165,47 @@ namespace config {
 //Different types of shaders.
 void computeShader() {
 	//For compute shaders.
-	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
-	glDepthMask(GL_TRUE);
-	glClearDepth(1.0f);
 }
 
 
 void screenspaceShader() {
-	//For screenspace shaders.
+	//For screenspace shaders, 2D.
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
+	glDisable(GL_CULL_FACE);
+
 }
 
 
 void worldspaceShader() {
-	//For shaders that draw onto triangles.
+	//For shaders that draw onto triangles, 3D.
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
+	glDepthMask(GL_TRUE);
+	glClearDepth(1.0f);
 
 	glEnable(GL_BLEND);
+	glEnable(GL_CULL_FACE);
+
+}
+
+}
+
+
+
+namespace matrices {
+
+glm::mat4 getProjectionMat() { //TBA
+	return glm::mat4(1.0f);
+}
+
+glm::mat4 getViewMat() { //TBA
+	return glm::mat4(1.0f);
+}
+
+glm::mat4 getModelMat() { //TBA
+	return glm::mat4(1.0f);
 }
 
 }
@@ -189,13 +213,8 @@ void worldspaceShader() {
 
 
 
-bool inline shaderIDinRange(int shaderID) {return (shaderID < 0) || (shaderID >= static_cast<int>(shared::shaders.size()));}
+bool inline shaderIDnotInRange(int shaderID) {return (shaderID < 0) || (shaderID >= static_cast<int>(shared::shaders.size()));}
 
-
-
-
-
-namespace graphics {
 
 void init(std::string name, std::pair<int, int> resolution, std::pair<int, int> version) {
 	if (shared::window) {return; /* GLFW window already active */}
@@ -230,7 +249,7 @@ void init(std::string name, std::pair<int, int> resolution, std::pair<int, int> 
 
 
 	//OpenGL
-	prepareOpenGL();
+	prepareOpenGL(resolution);
 
 
 
@@ -275,10 +294,27 @@ void configure(ShaderType type) {
 
 
 bool addUniformValue(int shaderID, std::string uniformName, float value) {
-	if (shaderIDinRange(shaderID)) {return false; /* Not in the shader list. */}
+	if (shaderIDnotInRange(shaderID)) {return false; /* Not in the shader list. */}
 	//Sets or updates (if applicable) the shader's uniform value.
 	shared::shaders[shaderID].setUniform(uniformName, value);
 	return true;
+}
+
+
+bool addVAO(int shaderID, VAOFormat format, std::vector<float> values) {
+	if (shaderIDnotInRange(shaderID)) {return false; /* Not in the shader list. */}
+	shared::shaders[shaderID].setVAO(format, values);
+	return true;
+}
+
+
+bool runShader(int shaderID, std::array<int, 3> dispatchSize) {
+	if (shaderIDnotInRange(shaderID)) {return false; /* Not in the shader list. */}
+	types::ShaderProgram& shader = shared::shaders[shaderID];
+
+	shader.use();
+	shader.applyUniforms();
+	return shader.run(glm::uvec3(dispatchSize[0], dispatchSize[1], dispatchSize[2]));
 }
 
 
@@ -290,6 +326,10 @@ void terminate() {
 		shared::window = nullptr;
 		glfwTerminate();
 		shared::init = false;
+
+		shared::numberOfShaders = 0u;
+		shared::numberOfTextures = 0u;
+
 		utils::cout("[C++] Successfully terminated GL");
 	} else {
 		utils::cout("[C++] Could not terminate: Was not initialised.");
