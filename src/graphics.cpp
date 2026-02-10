@@ -314,7 +314,10 @@ bool runShader(int shaderID, std::array<int, 3> dispatchSize) {
 
 	shader.use();
 	shader.applyUniforms();
-	return shader.run(glm::uvec3(dispatchSize[0], dispatchSize[1], dispatchSize[2]));
+	return shader.run(
+		glm::uvec3(dispatchSize[0], dispatchSize[1], dispatchSize[2]),
+		shaderID
+	);
 }
 
 

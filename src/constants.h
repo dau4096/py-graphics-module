@@ -102,11 +102,11 @@ namespace display {
 	static const std::map<VAOFormat, std::vector<Attribute>> layouts = {
 		{VAO_EMPTY,			 	{              }},
 		{VAO_POS_ONLY,		 	{{3},          }},
-	    {VAO_POS_UV2D,       	{{3}, {2},     }},
-	    {VAO_POS_UV3D,       	{{3}, {3},     }},
-	    {VAO_POS_NORMAL,     	{{3}, {3},     }},
-	    {VAO_POS_UV2D_NORMAL,	{{3}, {2}, {3},}},
-	    {VAO_POS_UV3D_NORMAL,	{{3}, {3}, {3},}},
+		{VAO_POS_UV2D,       	{{3}, {2},     }},
+		{VAO_POS_UV3D,       	{{3}, {3},     }},
+		{VAO_POS_NORMAL,     	{{3}, {3},     }},
+		{VAO_POS_UV2D_NORMAL,	{{3}, {2}, {3},}},
+		{VAO_POS_UV3D_NORMAL,	{{3}, {3}, {3},}},
 	};
 }
 

@@ -23,12 +23,12 @@ static inline void cout(Args&&... args) {
 
 template<typename... Args>
 static inline void cerr(Args&&... args) {
-    //Concatenate
-    std::ostringstream oss;
-    ((oss << args << " "), ...);
+	//Concatenate
+	std::ostringstream oss;
+	((oss << args << " "), ...);
 
-    //Raise exception.
-    throw std::runtime_error(oss.str());
+	//Raise exception.
+	throw std::runtime_error(oss.str());
 }
 
 
@@ -62,9 +62,9 @@ static std::string readFile(const std::string& filePath) {
 }
 
 static std::string getFilename(const std::string& path) {
-    size_t pos = path.find_last_of("/\\"); //Windows and linux style (/ and \)
-    if (pos == std::string::npos) {return path; /* None found */}
-    return path.substr(pos + 1);
+	size_t pos = path.find_last_of("/\\"); //Windows and linux style (/ and \)
+	if (pos == std::string::npos) {return path; /* None found */}
+	return path.substr(pos + 1);
 }
 
 

@@ -32,13 +32,14 @@ struct UniformValue {
 //ST_WORLDSPACE  → VAO & index count
 //ST_SCREENSPACE → N/A
 struct ShaderCall {
-	glm::uvec3 localSize;
-	GLuint VAO;
-	unsigned int numberOfVertices;
+	glm::uvec3 localSize = glm::uvec3(0u, 0u, 0u);
+	GLuint VAO = 0u;
+	unsigned int numberOfVertices = 0u;
+	bool hasVAO = false;
 
-	ShaderCall() : localSize(0u, 0u, 0u), VAO(0), numberOfVertices(0u) {}
-	ShaderCall(glm::uvec3& ls, GLuint vao, unsigned int nv)
-		: localSize(ls), VAO(vao), numberOfVertices(nv) {}
+	ShaderCall() : localSize(0u, 0u, 0u), VAO(0u), numberOfVertices(0u), hasVAO(false) {}
+	ShaderCall(glm::uvec3& ls) : localSize(ls), VAO(0u), numberOfVertices(0u), hasVAO(false) {}
+	ShaderCall(GLuint vao, unsigned int nv)	: localSize(0u, 0u, 0u), VAO(vao), numberOfVertices(nv), hasVAO(true) {}
 };
 
 
@@ -253,7 +254,7 @@ public:
 	}
 
 
-	bool run(glm::uvec3 dispatchSize) {
+	bool run(glm::uvec3 dispatchSize, unsigned int shaderID) {
 		switch (this->type) {
 			case ST_COMPUTE: {
 				//Dispatch compute
@@ -263,6 +264,11 @@ public:
 			}
 			case ST_WORLDSPACE: {
 				//Run worldspace (3D)
+				if (!_call.hasVAO) {
+					//No VAO added.
+					utils::cerr("No vertices were bound to the shader. Use \"gl.add_vao(shaderID, format, values)\" where shaderID=[", shaderID, "]");
+					return false;
+				}
 				glBindVertexArray(_call.VAO);
 				glDrawElements(GL_TRIANGLES, _call.numberOfVertices, GL_UNSIGNED_INT, nullptr);
 				glBindVertexArray(0);
