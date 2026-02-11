@@ -1,8 +1,9 @@
 #include "includes.h"
 #include "global.h"
 #include "utils.h"
-using namespace std;
 
+using namespace std;
+namespace py = pybind11;
 
 
 namespace graphics {
@@ -218,6 +219,11 @@ bool inline shaderIDnotInRange(int shaderID) {return (shaderID < 0) || (shaderID
 
 void init(std::string name, std::pair<int, int> resolution, std::pair<int, int> version) {
 	if (shared::window) {return; /* GLFW window already active */}
+	if ((version.first < 3) || ((version.first == 3) && (version.second < 3))) {
+		//Version is too old. Do not allow.
+		utils::cerr("OpenGL Version too old. Oldest supported version is 3.30 core.");
+		return;
+	}
 
 
 	//GLFW
@@ -293,10 +299,22 @@ void configure(ShaderType type) {
 
 
 
-bool addUniformValue(int shaderID, std::string uniformName, float value) {
-	if (shaderIDnotInRange(shaderID)) {return false; /* Not in the shader list. */}
-	//Sets or updates (if applicable) the shader's uniform value.
-	shared::shaders[shaderID].setUniform(uniformName, value);
+bool addUniformValue(int shaderID, std::string uniformName, py::object value) {
+	if (shaderIDnotInRange(shaderID))
+		return false;
+
+	types::ShaderProgram* shader = &(shared::shaders[shaderID]);
+	if (py::isinstance<py::int_>(value)       )	{shader->setUniform(uniformName, value.cast<int>());       } //UV_INT
+	else if (py::isinstance<py::float_>(value)) {shader->setUniform(uniformName, value.cast<float>());     } //UV_FLOAT
+	else if (py::isinstance<py::bool_>(value) )	{shader->setUniform(uniformName, value.cast<bool>());      } //UV_BOOL
+	else if (py::isinstance<glm::vec2>(value) )	{shader->setUniform(uniformName, value.cast<glm::vec2>()); } //UV_FVEC2
+	else if (py::isinstance<glm::ivec2>(value)) {shader->setUniform(uniformName, value.cast<glm::ivec2>());} //UV_IVEC2
+	else if (py::isinstance<glm::vec3>(value) )	{shader->setUniform(uniformName, value.cast<glm::vec3>()); } //UV_FVEC3
+	else if (py::isinstance<glm::ivec3>(value)) {shader->setUniform(uniformName, value.cast<glm::ivec3>());} //UV_IVEC3
+	else if (py::isinstance<glm::vec4>(value) )	{shader->setUniform(uniformName, value.cast<glm::vec4>()); } //UV_FVEC4
+	else if (py::isinstance<glm::ivec4>(value)) {shader->setUniform(uniformName, value.cast<glm::ivec4>());} //UV_IVEC4
+	else {utils::cerr("Unsupported uniform type found.");}
+
 	return true;
 }
 

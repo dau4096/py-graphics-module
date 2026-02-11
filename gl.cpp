@@ -8,8 +8,6 @@
 #include "src/graphics.h"
 
 using namespace std;
-
-
 namespace py = pybind11;
 
 
@@ -37,20 +35,20 @@ void pollEvents() {
 
 
 bool keyHeld(int key) {
-    return currentKeyMap[key];
+	return currentKeyMap[key];
 }
 
 bool keyPressed(int key) {
-    return currentKeyMap[key] && !previousKeyMap[key];
+	return currentKeyMap[key] && !previousKeyMap[key];
 }
 
 bool keyReleased(int key) {
-    return !currentKeyMap[key] && previousKeyMap[key];
+	return !currentKeyMap[key] && previousKeyMap[key];
 }
 
 bool windowOpen() {
-    if (!shared::window) {return false; /* No window open so "close" it */}
-    return !glfwWindowShouldClose(shared::window);
+	if (!shared::window) {return false; /* No window open so "close" it */}
+	return !glfwWindowShouldClose(shared::window);
 }
 
 void requestClose() {
@@ -66,6 +64,15 @@ void requestClose() {
 //The module name in py is "gl".
 PYBIND11_MODULE(gl, m) {
 	py::options opt;
+	opt.show_user_defined_docstrings();
+
+		m.doc() = R"doc(
+OpenGL abstraction module.
+
+Intended to simplify the OpenGL process to the higher-level steps such as;
+- Load shaders
+- Manage window
+- Run shaders
 - Poll inputs
 
 
@@ -73,24 +80,24 @@ Requires;
 - OpenGL 3.3+
 - GLFW
 - GLEW
+)doc";
 
 	//Config
-	m.def("verbose", verbose); //gl.verbose() [Should the file give console output for actions taken?]
+	m.def("verbose", verbose, "Configures whether the module can print to console."); //gl.verbose() [Should the file give console output for actions taken?]
 
 
 
 
 	//Values
-	//OpenGL shader types
-	m.attr("VERTEX_SHADER")   = GL_VERTEX_SHADER;
-	m.attr("FRAGMENT_SHADER") = GL_FRAGMENT_SHADER;
-	m.attr("COMPUTE_SHADER")  = GL_COMPUTE_SHADER;
-
 	//gl Shader types
-	py::enum_<ShaderType>(m, "ShaderType") //Shader Type Enum
-		.value("ST_NONE", ShaderType::ST_NONE)
-		.value("ST_WORLDSPACE", ShaderType::ST_WORLDSPACE)
-		.value("ST_SCREENSPACE", ShaderType::ST_SCREENSPACE)
+	py::enum_<ShaderType>(m, R"doc(
+ShaderType
+----------
+- ST_NONE        : No shader.
+- ST_WORLDSPACE  : Shader on 3D geometry.
+- ST_SCREENSPACE : Shader in screenspace, 2D.
+- ST_COMPUTE     : Compute shader.
+)doc") //Shader Type Enum
 		.value("ST_NONE", 			ShaderType::ST_NONE)
 		.value("ST_WORLDSPACE", 	ShaderType::ST_WORLDSPACE)
 		.value("ST_SCREENSPACE", 	ShaderType::ST_SCREENSPACE)
@@ -99,7 +106,17 @@ Requires;
 
 
 	//gl VAO formats
-	py::enum_<VAOFormat>(m, "VAOFormat") //VAO Format Enum
+	py::enum_<VAOFormat>(m, R"doc(
+VAOFormat
+---------
+- VAO_EMPTY           : Empty VAO. No data.
+- VAO_POS_ONLY        : Only 3D position attribute.
+- VAO_POS_UV2D        : Position and 2D UV.
+- VAO_POS_UV3D        : Position and 3D UV (Z used for texture index)
+- VAO_POS_NORMAL      : Position and 3D Normal vector
+- VAO_POS_UV2D_NORMAL : Position, 2D UV and 3D Normal vector.
+- VAO_POS_UV3D_NORMAL : Position, 3D UV and 3D Normal vector. (Z used for texture index)
+)doc") //VAO Format Enum
 		.value("VAO_EMPTY", 			VAOFormat::VAO_EMPTY)
 		.value("VAO_POS_ONLY", 			VAOFormat::VAO_POS_ONLY)
 		.value("VAO_POS_UV2D", 			VAOFormat::VAO_POS_UV2D)
@@ -114,9 +131,7 @@ Requires;
 
 	//Manager Functions
 	m.def("init", &graphics::init, //gl.init(name="", resolution=(1,1), version=(3,3))
-		py::arg("name") = "",
-		py::arg("resolution") = std::pair<int, int>{1, 1},
-		py::arg("version") = std::pair<int, int>{3, 3},
+		py::arg("name")="GLFW/py-graphics", py::arg("resolution")=std::pair<int, int>{1, 1}, py::arg("version")=std::pair<int, int>{3, 3},
 		R"doc(
 Initialises the OpenGL context and its associated GLFW window, if required.
 
@@ -142,53 +157,178 @@ Terminates the GLFW window, and cleans up OpenGL objects.
 )doc"
 	); 
 
-	m.def("window_open", &windowOpen); //gl.window_open()
+
+	m.def("window_open", &windowOpen, //gl.window_open()
+		R"doc(
+Returns a boolean if the GLFW window is open or not.
+
+Returns
+-------
+bool
+	Is the window open.
+)doc"
+	);
+
 
 	m.def("was_key_pressed", &keyPressed, //gl.was_key_pressed()
-		py::arg("key") = 0
+		py::arg("key"),
+		R"doc(
+If key has been pressed since the last gl.poll_events() call.
+
+Parameters
+----------
+key : int
+	The key to check. Enums follow the format KEY_[name] for [name]s like "W", "S", "LEFT_SHIFT", "ESCAPE" etc.
+
+Returns
+-------
+bool
+	If the key was pressed since the last gl.poll_events() call.
+)doc"
 	);
 	m.def("was_key_released", &keyReleased, //gl.was_key_released()
-		py::arg("key") = 0
+		py::arg("key"),
+		R"doc(
+If key has been released since the last gl.poll_events() call.
+
+Parameters
+----------
+key : int
+	The key to check. Enums follow the format KEY_[name] for [name]s like "W", "S", "LEFT_SHIFT", "ESCAPE" etc.
+
+Returns
+-------
+bool
+	If the key was released since the last gl.poll_events() call.
+)doc"
 	);
+
+
 	m.def("is_key_held", &keyHeld, //gl.is_key_held()
-		py::arg("keyis_key_held") = 0
+		py::arg("keyis_key_held"),
+		R"doc(
+If key has been held since the last gl.poll_events() call.
+
+Parameters
+----------
+key : int
+	The key to check. Enums follow the format KEY_[name] for [name]s like "W", "S", "LEFT_SHIFT", "ESCAPE" etc.
+
+Returns
+-------
+bool
+	If the key was held since the last gl.poll_events() call.
+)doc"
 	);
+
+
+
+
 
 
 	//OpenGL abstractions
 	m.def("load_shader", &graphics::loadShader, //gl.load_shader(type=ST_NONE, filePathA="", filePathB="");
-		py::arg("type") = ST_NONE,
-		py::arg("filePathA") = "",
-		py::arg("filePathB") = ""
+		py::arg("type"), py::arg("filePathA"), py::arg("filePathB") = "",
+		R"doc(
+Creates a shader.
+For types;
+- ST_NONE
+  = No files required
+- ST_WORLDSPACE
+  = vertex filepath, fragment filepath
+- ST_SCREENSPACE
+  = fragment filepath
+- ST_COMPUTE
+  = compute filepath
+
+Parameters
+----------
+type : ShaderType
+	The type of shader to create.
+filePathA : str, optional
+	The first file to load from. Optional.
+filePathB : str, optional
+	The second file to load from. Optional.
+
+Returns
+-------
+int
+	Index of the created shader.
+)doc"
 	);
 
+
 	m.def("add_uniform_value", &graphics::addUniformValue, //gl.add_uniform_value(shader=-1, name="", value=0.0);
-		py::arg("shader") = -1,
-		py::arg("name") = "",
-		py::arg("value") = 0.0f
+		py::arg("shader"), py::arg("name"), py::arg("value"),
+		R"doc(
+Adds a value to be passed into the shader.
+The value is cached, so if it changes per-shader-run, this must be called every time.
+
+Parameters
+----------
+shader : int
+	The index of the shader to add uniform to.
+name : str
+	The name of the uniform to assign.
+value : bool|int|float|_vec2|_vec3|_vec4
+	Takes any 1-4D value that can be cast to a numerical value to bind at shader runtime.
+)doc"
 	);
+
 
 	m.def(
 		"add_vao",
 		[](int shader, VAOFormat format, py::list values) {
-			std::vector<float> vec = values.cast<std::vector<float>>();
+			std::vector<float> vec = values.cast<std::vector<float>>(); //Converts py::list to std::vector<float>.
 			graphics::addVAO(shader, format, vec);
 		},
-		py::arg("shader") = -1,
-		py::arg("format") = VAO_EMPTY,
-		py::arg("values") = py::list()
+		py::arg("shader"), py::arg("format")=VAO_EMPTY, py::arg("values")=py::list(),
+		R"doc(
+Adds vertices to a 3D shader. Takes a shader index to assign to, a vertex data format (VAOFormat) and a list of float values.
+
+Parameters
+----------
+shader : int
+	Shader index to assign to.
+format : VAOFormat
+	The format of the data. See docs for VAOFormat for the formats.
+values : list[float]
+	A dataset of floating point values to be used in the shader's VAO.
+)doc"
 	);
+
 
 	m.def("run", &graphics::runShader, //gl.run(shader=-1, dispatch=(0, 0, 0));
-		py::arg("shader") = -1,
-		py::arg("dispatch") = std::array<int, 3>{0, 0, 0}
+		py::arg("shader")=-1, py::arg("dispatch")=std::array<int, 3>{0, 0, 0},
+		R"doc(
+Runs a given shader. If a compute shader, takes a list of 3 elements as number of X/Y/Z threads to dispatch.
+
+Parameters
+----------
+shader : int
+	Shader index to assign to.
+dispatch : list[int, int, int]
+	Number of X/Y/Z threads to dispatch, only used if the shader is ST_COMPUTE type.
+)doc"
 	);
 
-	m.def("update_window", &updateWindow);
-	m.def("poll_events", &pollEvents);
+
+	m.def("update_window", &updateWindow, R"doc( Updates the window's framebuffer and other systems. )doc");
+
+
+	m.def("poll_events", &pollEvents, R"doc( Check for GLFW inputs and events. )doc");
+
 
 	m.def("configure", &graphics::configure,
-		py::arg("type") = ST_NONE
+		py::arg("type") = ST_NONE,
+		R"doc(
+Configures OpenGL settings for this type of shader pass.
+
+Parameters
+----------
+type : ShaderType
+	Type of shader to configure for. See (ShaderType) for info on types.
+)doc"
 	);
 
 

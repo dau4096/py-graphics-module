@@ -1,6 +1,6 @@
 PYTHON      := python3
 CXX         := g++
-CXXFLAGS    := -O3 -Wall -std=c++23 -fPIC
+CXXFLAGS    := -O3 -Wall -std=c++23 -fPIC -Wunused-function
 LDFLAGS     := -shared
 
 PYBIND_INC  := $(shell $(PYTHON) -m pybind11 --includes)
