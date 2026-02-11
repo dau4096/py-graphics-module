@@ -45,7 +45,7 @@ fi
 
 #rm the files.
 for f in "${files[@]}"; do
-    echo " - Deleting $f"
+    echo " = Deleting $f"
     rm -f "$f"
 done
 

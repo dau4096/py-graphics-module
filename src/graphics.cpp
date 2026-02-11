@@ -63,6 +63,8 @@ void APIENTRY openGLErrorCallback(
 
 void prepareOpenGL(glm::ivec2 windowRes) {
 	//Set up any requirements for the context.
+	utils::cout("Configuring OpenGL-wide options");
+
 
 	//Debug settings
 	glEnable(GL_DEBUG_OUTPUT);
@@ -93,6 +95,7 @@ namespace compiler {
 //Different types of shaders.
 int computeShader(std::string filePath) {
 	//For compute shaders.
+	utils::cout(std::format("Compiling Compute shader [COMP: \"{}\"]", filePath));
 	std::string compSource = utils::readFile(filePath);
 	types::ShaderObject compute = types::ShaderObject(GL_COMPUTE_SHADER, compSource, utils::getFilename(filePath));
 	
@@ -107,6 +110,7 @@ int computeShader(std::string filePath) {
 
 int screenspaceShader(std::string filePath) {
 	//For screenspace shaders.
+	utils::cout(std::format("Compiling Screenspace shader [FRAG: \"{}\"]", filePath));
 	std::string vertexSource = R"(
 /* screenspace.vert */
 #version 460 core
@@ -143,6 +147,7 @@ void main() {
 
 int worldspaceShader(std::string vertexFilePath, std::string fragmentFilePath) {
 	//For shaders that draw onto triangles.
+	utils::cout(std::format("Compiling Worldpsace shader [VERT: \"{}\", FRAG: \"{}\"]", vertexFilePath, fragmentFilePath));
 	std::string vertexSource = utils::readFile(vertexFilePath);
 	types::ShaderObject vertex = types::ShaderObject(GL_VERTEX_SHADER, vertexSource, utils::getFilename(vertexFilePath));
 
@@ -166,12 +171,14 @@ namespace config {
 //Different types of shaders.
 void computeShader() {
 	//For compute shaders.
+	utils::cout("Configuring OpenGL for [ST_COMPUTE]");
 	glDisable(GL_BLEND);
 }
 
 
 void screenspaceShader() {
 	//For screenspace shaders, 2D.
+	utils::cout("Configuring OpenGL for [ST_SCREENSPACE]");
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glDisable(GL_CULL_FACE);
@@ -181,6 +188,7 @@ void screenspaceShader() {
 
 void worldspaceShader() {
 	//For shaders that draw onto triangles, 3D.
+	utils::cout("Configuring OpenGL for [ST_WORLDSPACE]");
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glDepthMask(GL_TRUE);
@@ -220,7 +228,7 @@ bool inline shaderIDnotInRange(int shaderID) {return (shaderID < 0) || (shaderID
 void init(std::string name, glm::ivec2 resolution, const types::GLVersion& openGLVersion) {
 	if (shared::window) {return; /* GLFW window already active */}
 	utils::cout(std::format(
-		"[C++] Initialising OpenGL version [{}.{}0 {}]",
+		"Initialising OpenGL version [{}.{}0 {}]",
 		openGLVersion.major, openGLVersion.minor, ((openGLVersion.embedded) ? "ES" : "CORE")
 	));
 	if (!openGLVersion.valid()) {
@@ -265,7 +273,7 @@ void init(std::string name, glm::ivec2 resolution, const types::GLVersion& openG
 
 
 	shared::init = true;
-	utils::cout("[C++] Successfully loaded GL-Module");
+	utils::cout("Successfully loaded GL-Module");
 }
 
 
@@ -305,8 +313,7 @@ void configure(ShaderType type) {
 
 
 bool addUniformValue(int shaderID, std::string uniformName, py::object value) {
-	if (shaderIDnotInRange(shaderID))
-		return false;
+	if (shaderIDnotInRange(shaderID)) {return false;}
 
 	types::ShaderProgram* shader = &(shared::shaders[shaderID]);
 	if (py::isinstance<py::int_>(value)       )	{shader->setUniform(uniformName, value.cast<int>());       } //UV_INT
@@ -353,9 +360,9 @@ void terminate() {
 		shared::numberOfShaders = 0u;
 		shared::numberOfTextures = 0u;
 
-		utils::cout("[C++] Successfully terminated GL");
+		utils::cout("Successfully terminated GL");
 	} else {
-		utils::cout("[C++] Could not terminate: Was not initialised.");
+		utils::cout("Could not terminate: Was not initialised.");
 	}
 }
 

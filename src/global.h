@@ -116,7 +116,7 @@ public:
 		if (!status) {
 			char buffer[constants::misc::GL_ERROR_LENGTH];
 			glGetShaderInfoLog(GLindex, constants::misc::GL_ERROR_LENGTH, nullptr, buffer);
-			utils::cout("\nShader [", name, "] compile error:");
+			utils::cout(std::format("\nShader [{}] compile error:", name));
 			utils::cerr(buffer);
 			return false;
 		}
@@ -205,6 +205,7 @@ public:
 			//Find dispatch size def
 			GLint workGroupSize[3];
 			glGetProgramiv(_program, GL_COMPUTE_WORK_GROUP_SIZE, workGroupSize);
+			utils::cout(std::format("Found ST_COMPUTE local size of: [{}, {}, {}]", workGroupSize[0], workGroupSize[1], workGroupSize[2]));
 
 			_call.localSize = glm::uvec3(
 				static_cast<unsigned int>(workGroupSize[0]),
@@ -227,6 +228,14 @@ public:
 
 	void setVAO(VAOFormat format, std::vector<float>& values) {
 		//Create VAO with given format and values.
+		std::unordered_map<VAOFormat, std::string> formatNameMap = std::unordered_map<VAOFormat, std::string>{
+			{VAO_EMPTY, "VAO_EMPTY"}, 						{VAO_POS_ONLY, "VAO_POS_ONLY"},				 {VAO_POS_NORMAL, "VAO_POS_NORMAL"},
+			{VAO_POS_UV2D, "VAO_POS_UV2D"}, 				{VAO_POS_UV3D, "VAO_POS_UV3D"},
+			{VAO_POS_UV2D_NORMAL, "VAO_POS_UV2D_NORMAL"}, 	{VAO_POS_UV3D_NORMAL, "VAO_POS_UV3D_NORMAL"}
+		};
+		utils::cout(std::format(
+			"Creating VAO with format [{}]", formatNameMap[format]
+		));
 		if (format == VAO_EMPTY) {
 			_call.numberOfVertices = 0u;
 			_call.VAO = constants::display::emptyVAO;
@@ -253,12 +262,14 @@ public:
 		unsigned int attribID = 0;
 		//Loop through and set attributes based on the format. For instance, VAO_POS_UV2D_NORMAL = {3, 2, 3}.
 		for (const Attribute& attr : (constants::display::layouts.at(format))) {
+			utils::cout(std::format("Adding attribute with size: [{} VALUES, {} BYTES]", attr.size, attr.size*sizeof(float)));
 			glVertexAttribPointer(attribID, attr.size, GL_FLOAT, GL_FALSE, vertexSizeSingular * sizeof(float), (void*)(offset * sizeof(float)));
 			glEnableVertexAttribArray(attribID++);
 			offset += attr.size;
 		}
 
 		glBindVertexArray(0);
+		_call.hasVAO = true;
 	}
 
 
@@ -267,6 +278,7 @@ public:
 
 	template<typename T>
 	void setUniform(const std::string& name, const T& val) {
+		utils::cout(std::format("Setting uniform value with Name=\"{}\"", name));
 		_uniforms[name] = UniformValue(val);
 	}
 
@@ -275,6 +287,7 @@ public:
 		for (const auto& [name, u] : _uniforms) {
 			GLint loc = glGetUniformLocation(_program, name.c_str());
 			if (loc == -1) {continue; /* Invalid location for this shader. */}
+			utils::cout(std::format("Applying uniform of Name=\"{}\"", name));
 
 			switch (u.type) {
 				case UniformType::UV_FLOAT: glUniform1f(loc,          u.values.x);  break;
@@ -295,15 +308,24 @@ public:
 		switch (this->type) {
 			case ST_COMPUTE: {
 				//Dispatch compute
+				utils::cout(std::format(
+					"Running Compute shader ID [{}] with dispatch size [{}, {}, {}]",
+					shaderID, dispatchSize.x,
+					dispatchSize.y,	dispatchSize.z
+				));
 				glm::uvec3 dispatchGroups = (dispatchSize + _call.localSize - 1u) / _call.localSize;
 				glDispatchCompute(dispatchGroups.x, dispatchGroups.y, dispatchGroups.z);
 				break;
 			}
+
 			case ST_WORLDSPACE: {
 				//Run worldspace (3D)
+				utils::cout(std::format(
+					"Running Worldspace [3D] shader ID [{}]",	shaderID
+				));
 				if (!_call.hasVAO) {
 					//No VAO added.
-					utils::cerr("No vertices were bound to the shader. Use \"gl.add_vao(shaderID, format, values)\" where shaderID=[", shaderID, "]");
+					utils::cerr(std::format("No vertices were bound to the shader. Use \"gl.add_vao(shaderID, format, values)\" where shaderID=[{}]", shaderID));
 					return false;
 				}
 				glBindVertexArray(_call.VAO);
@@ -311,9 +333,13 @@ public:
 				glBindVertexArray(0);
 				break;
 			}
+
 			case ST_SCREENSPACE: {
 				//Run screenspace (2D)
-				glBindVertexArray(constants::display::emptyVAO);
+				utils::cout(std::format(
+					"Running Screenspace [2D] shader ID [{}]",	shaderID
+				));
+				glBindVertexArray(constants::display::emptyVAO); //No VAO needed, uses vertices from the vertex-shader.
 				glDrawArrays(GL_TRIANGLE_STRIP, 0u, 4u);
 				glBindVertexArray(0);
 				break;

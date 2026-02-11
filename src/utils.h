@@ -17,6 +17,7 @@ static inline void cout_inline(Args&&... args) {
 template<typename... Args>
 static inline void cout(Args&&... args) {
 	if (!shared::verbose) {return; /* Don't output to console. */}
+	std::cout << "[C++] ";
 	((std::cout << args << " "), ...); //Requires C++17 or more.
 	std::cout << std::endl;
 }
