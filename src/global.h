@@ -8,6 +8,43 @@
 namespace types {
 
 
+//Version of OpenGL.
+struct GLVersion {
+    unsigned int major = 0u;
+    unsigned int minor = 0u;
+    bool embedded = false;
+
+    //Minimum supported versions [3.30 Core+ / 3.1 ES+].
+    static constexpr glm::uvec2 MIN_CORE = {3u, 3u};
+    static constexpr glm::uvec2 MIN_ES   = {3u, 1u};
+
+    GLVersion(glm::uvec2 ver, bool es)
+        : major(ver.x), minor(ver.y), embedded(es) {}
+
+    constexpr bool operator>=(const GLVersion& other) const {
+        return (
+        	(major > other.major) ||
+        	((major == other.major) && (minor >= other.minor))
+        );
+    }
+
+    //Is this version new enough?
+    bool valid() const {
+        const glm::uvec2 minVer = (embedded) ? MIN_ES : MIN_CORE;
+        GLVersion minVersion = GLVersion(minVer, embedded);
+        return *this >= minVersion;
+    }
+
+    //Tell GLFW to use this version.
+    void use() const {
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, major);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
+        glfwWindowHint(GLFW_CLIENT_API, ((embedded) ? GLFW_OPENGL_ES_API : GLFW_OPENGL_API));
+    }
+};
+
+
+
 struct UniformValue {
 	UniformType type;
 	glm::vec4 values;

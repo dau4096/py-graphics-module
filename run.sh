@@ -1,6 +1,9 @@
 #!/bin/bash
 
 clear
+
+./clean.sh -y
+
 cd src || exit 1
 
 if [ $# -gt 0 ]; then

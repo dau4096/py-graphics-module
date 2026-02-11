@@ -62,7 +62,7 @@ void requestClose() {
 
 
 
-void addVAOconverter(int shader, VAOFormat format, py::array_t<float> array) {
+void manageAddVAO(int shader, VAOFormat format, py::array_t<float> array) {
 	//Translate python array type (list, tuple, numpy.ndarray) into vector and pass to graphics::addVao() func.
 	py::buffer_info info = array.request();
 	float* data = static_cast<float*>(info.ptr);
@@ -71,6 +71,24 @@ void addVAOconverter(int shader, VAOFormat format, py::array_t<float> array) {
 	std::vector<float> vec = std::vector<float>(data, data + size);
 	graphics::addVAO(shader, format, vec);
 }
+
+
+void manageInit(std::string name, glm::ivec2 resolution, glm::uvec2 versionUV3, bool core) {
+	types::GLVersion version = types::GLVersion(versionUV3, !core); //Takes "Is embedded" but we have "Is core". They are opposites.
+	graphics::init(name, resolution, version);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -145,8 +163,9 @@ VAOFormat
 
 
 	//Manager Functions
-	m.def("init", &graphics::init, //gl.init(name="", resolution=(0,0), version=(3,3))
-		py::arg("name")="GLFW/py-graphics", py::arg("resolution")=glm::ivec2(0,0), py::arg("version")=glm::ivec2(3, 3),
+	m.def("init", &manageInit, //gl.init(name="", resolution=(0,0), version=(3,3), core=true)
+		py::arg("name")="GLFW/py-graphics", py::arg("resolution")=glm::ivec2(0,0),
+		py::arg("version")=glm::ivec2(3, 3), py::arg("core")=true,
 		R"doc(
 Initialises the OpenGL context and its associated GLFW window, if required.
 
@@ -292,7 +311,7 @@ value : bool|int|float|_vec2|_vec3|_vec4
 
 
 	m.def(
-		"add_vao", &addVAOconverter,
+		"add_vao", &manageAddVAO,
 		py::arg("shader"), py::arg("format")=VAO_EMPTY, py::arg("values")=py::list(),
 		R"doc(
 Adds vertices to a 3D shader. Takes a shader index to assign to, a vertex data format (VAOFormat) and a list of float values.

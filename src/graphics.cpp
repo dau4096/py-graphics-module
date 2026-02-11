@@ -217,11 +217,18 @@ glm::mat4 getModelMat() { //TBA
 bool inline shaderIDnotInRange(int shaderID) {return (shaderID < 0) || (shaderID >= static_cast<int>(shared::shaders.size()));}
 
 
-void init(std::string name, glm::ivec2 resolution, glm::ivec2 version) {
+void init(std::string name, glm::ivec2 resolution, const types::GLVersion& openGLVersion) {
 	if (shared::window) {return; /* GLFW window already active */}
-	if ((version.x < 3) || ((version.x == 3) && (version.y < 3))) {
+	utils::cout(std::format(
+		"[C++] Initialising OpenGL version [{}.{}0 {}]",
+		openGLVersion.major, openGLVersion.minor, ((openGLVersion.embedded) ? "ES" : "CORE")
+	));
+	if (!openGLVersion.valid()) {
 		//Version is too old. Do not allow.
-		utils::cerr("OpenGL Version too old. Oldest supported version is 3.30 core.");
+		utils::cerr(std::format(
+			"OpenGL Version too old. Oldest supported versions are [3.30 CORE / 3.10 ES]. Attempted: [{}.{}0 {}]",
+			openGLVersion.major, openGLVersion.minor, ((openGLVersion.embedded) ? "ES" : "CORE")
+		));
 		return;
 	}
 
@@ -231,12 +238,10 @@ void init(std::string name, glm::ivec2 resolution, glm::ivec2 version) {
 		//GLFW is not initialised properly
 		utils::cerr("Failed to init GLFW");
 	}
-	utils::cout("[C++] Initialising OpenGL version [", version.x, version.y, "core ]");
 	if ((resolution.x < 1) || (resolution.y < 1)) {
 		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 	}
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, version.x);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, version.y);
+	openGLVersion.use();
 	shared::window = glfwCreateWindow(resolution.x, resolution.y, name.c_str(), nullptr, nullptr);
 	if (!shared::window) {
 		//GLFW could not create window.
@@ -260,7 +265,7 @@ void init(std::string name, glm::ivec2 resolution, glm::ivec2 version) {
 
 
 	shared::init = true;
-	utils::cout("[C++] Successfully loaded GL");
+	utils::cout("[C++] Successfully loaded GL-Module");
 }
 
 

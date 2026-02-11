@@ -8,7 +8,7 @@
 
 namespace graphics {
 
-	void init(std::string name, glm::ivec2 resolution, glm::ivec2 version);
+	void init(std::string name, glm::ivec2 resolution, const types::GLVersion& version);
 
 	int loadShader(ShaderType type, std::string filePathA, std::string filePathB);
 	void configure(ShaderType type);
