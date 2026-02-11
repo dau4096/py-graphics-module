@@ -2,6 +2,7 @@
 //Main file for the py "module".
 
 #include "src/includes.h"
+#include "src/typecast.h"
 #include "src/constants.h"
 #include "src/global.h"
 #include "src/utils.h"
@@ -55,6 +56,20 @@ void requestClose() {
 	if (shared::window) {
 		glfwSetWindowShouldClose(shared::window, GLFW_TRUE);
 	}
+}
+
+
+
+
+
+void addVAOconverter(int shader, VAOFormat format, py::array_t<float> array) {
+	//Translate python array type (list, tuple, numpy.ndarray) into vector and pass to graphics::addVao() func.
+	py::buffer_info info = array.request();
+	float* data = static_cast<float*>(info.ptr);
+	size_t size = info.size;
+
+	std::vector<float> vec = std::vector<float>(data, data + size);
+	graphics::addVAO(shader, format, vec);
 }
 
 
@@ -130,8 +145,8 @@ VAOFormat
 
 
 	//Manager Functions
-	m.def("init", &graphics::init, //gl.init(name="", resolution=(1,1), version=(3,3))
-		py::arg("name")="GLFW/py-graphics", py::arg("resolution")=std::pair<int, int>{1, 1}, py::arg("version")=std::pair<int, int>{3, 3},
+	m.def("init", &graphics::init, //gl.init(name="", resolution=(0,0), version=(3,3))
+		py::arg("name")="GLFW/py-graphics", py::arg("resolution")=glm::ivec2(0,0), py::arg("version")=glm::ivec2(3, 3),
 		R"doc(
 Initialises the OpenGL context and its associated GLFW window, if required.
 
@@ -277,11 +292,7 @@ value : bool|int|float|_vec2|_vec3|_vec4
 
 
 	m.def(
-		"add_vao",
-		[](int shader, VAOFormat format, py::list values) {
-			std::vector<float> vec = values.cast<std::vector<float>>(); //Converts py::list to std::vector<float>.
-			graphics::addVAO(shader, format, vec);
-		},
+		"add_vao", &addVAOconverter,
 		py::arg("shader"), py::arg("format")=VAO_EMPTY, py::arg("values")=py::list(),
 		R"doc(
 Adds vertices to a 3D shader. Takes a shader index to assign to, a vertex data format (VAOFormat) and a list of float values.
@@ -299,7 +310,7 @@ values : list[float]
 
 
 	m.def("run", &graphics::runShader, //gl.run(shader=-1, dispatch=(0, 0, 0));
-		py::arg("shader")=-1, py::arg("dispatch")=std::array<int, 3>{0, 0, 0},
+		py::arg("shader")=-1, py::arg("dispatch")=glm::uvec3(0u, 0u, 0u),
 		R"doc(
 Runs a given shader. If a compute shader, takes a list of 3 elements as number of X/Y/Z threads to dispatch.
 

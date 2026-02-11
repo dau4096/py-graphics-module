@@ -61,7 +61,7 @@ void APIENTRY openGLErrorCallback(
 }
 
 
-void prepareOpenGL(std::pair<int, int> windowRes) {
+void prepareOpenGL(glm::ivec2 windowRes) {
 	//Set up any requirements for the context.
 
 	//Debug settings
@@ -70,7 +70,7 @@ void prepareOpenGL(std::pair<int, int> windowRes) {
 	glDebugMessageCallback(openGLErrorCallback, nullptr);
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 
-	glViewport(0, 0, windowRes.first, windowRes.second);
+	glViewport(0, 0, windowRes.x, windowRes.y);
 
 	//Create the empty VAO used in screenspace shaders
 	glGenVertexArrays(1, &constants::display::emptyVAO); //Yes technically not constant, but it will _NEVER_ change after now.
@@ -217,9 +217,9 @@ glm::mat4 getModelMat() { //TBA
 bool inline shaderIDnotInRange(int shaderID) {return (shaderID < 0) || (shaderID >= static_cast<int>(shared::shaders.size()));}
 
 
-void init(std::string name, std::pair<int, int> resolution, std::pair<int, int> version) {
+void init(std::string name, glm::ivec2 resolution, glm::ivec2 version) {
 	if (shared::window) {return; /* GLFW window already active */}
-	if ((version.first < 3) || ((version.first == 3) && (version.second < 3))) {
+	if ((version.x < 3) || ((version.x == 3) && (version.y < 3))) {
 		//Version is too old. Do not allow.
 		utils::cerr("OpenGL Version too old. Oldest supported version is 3.30 core.");
 		return;
@@ -231,13 +231,13 @@ void init(std::string name, std::pair<int, int> resolution, std::pair<int, int> 
 		//GLFW is not initialised properly
 		utils::cerr("Failed to init GLFW");
 	}
-	utils::cout("[C++] Initialising OpenGL version [", version.first, version.second, "core ]");
-	if ((resolution.first <= 1) || (resolution.second <= 1)) {
+	utils::cout("[C++] Initialising OpenGL version [", version.x, version.y, "core ]");
+	if ((resolution.x < 1) || (resolution.y < 1)) {
 		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 	}
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, version.first);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, version.second);
-	shared::window = glfwCreateWindow(resolution.first, resolution.second, name.c_str(), nullptr, nullptr);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, version.x);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, version.y);
+	shared::window = glfwCreateWindow(resolution.x, resolution.y, name.c_str(), nullptr, nullptr);
 	if (!shared::window) {
 		//GLFW could not create window.
 		utils::cerr("Failed to create window");
@@ -326,16 +326,13 @@ bool addVAO(int shaderID, VAOFormat format, std::vector<float> values) {
 }
 
 
-bool runShader(int shaderID, std::array<int, 3> dispatchSize) {
+bool runShader(int shaderID, glm::uvec3 dispatchSize) {
 	if (shaderIDnotInRange(shaderID)) {return false; /* Not in the shader list. */}
 	types::ShaderProgram& shader = shared::shaders[shaderID];
 
 	shader.use();
 	shader.applyUniforms();
-	return shader.run(
-		glm::uvec3(dispatchSize[0], dispatchSize[1], dispatchSize[2]),
-		shaderID
-	);
+	return shader.run(dispatchSize, shaderID);
 }
 
 
