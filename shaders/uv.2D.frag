@@ -4,7 +4,8 @@
 in vec2 fragUV;
 out vec4 fragColour;
 
-uniform int test;
+uniform int testsca;
+uniform vec3 testvec;
 
 void main() {
 	//Simply outputs the pixel's screen UV.

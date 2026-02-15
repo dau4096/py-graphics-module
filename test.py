@@ -1,8 +1,8 @@
 "test.py"
 #Used to test the module.
 
+import glm;
 import gl;
-
 
 
 ######## ANSI COLOURS ########
@@ -33,11 +33,13 @@ def screenspaceShader() -> None:
 
 	#Load shader from file.
 	shaderID:int = gl.load_shader(gl.ST_SCREENSPACE, "shaders/uv.2D.frag");
-	assert shaderID != -1, "Screenspace Shader failed to be loaded.";
+	assert (shaderID != -1), "Screenspace Shader failed to be loaded.";
 
-	#Attempt to bind a unifom value
-	successUniform:bool = gl.add_uniform_value(shaderID, "test", 0);
-	assert successUniform, "Failed to assign value to shader uniform";
+	#Attempt to bind some unifom values
+	successUniformScalar:bool = gl.add_uniform_value(shaderID, "testsca", 0);
+	assert successUniformScalar, "Failed to assign scalar value to shader uniform";
+	successUniformVector:bool = gl.add_uniform_value(shaderID, "testvec", glm.vec3(1, 1, 1));
+	assert successUniformVector, "Failed to assign vector value to shader uniform";
 
 	#Check for shader run-errors.
 	successRun:bool = gl.run(shaderID);
@@ -57,7 +59,7 @@ def computeShader() -> None:
 
 	#Load shader from file.
 	shaderID:int = gl.load_shader(gl.ST_COMPUTE, "shaders/compute.comp");
-	assert shaderID != -1, "Compute Shader failed to be loaded.";
+	assert (shaderID != -1), "Compute Shader failed to be loaded.";
 
 	#Test different dispatch sizes
 	success1:bool = gl.run(shaderID, [1, 1, 1]);
@@ -74,13 +76,13 @@ def computeShader() -> None:
 ########            ########
 
 
-def worldspaceShader(pvmMatrix:list[float]) -> None:
+def worldspaceShader(pvmMatrix:glm.mat4) -> None:
 	print(f"{Colours.MAJOR}[PY ] Testing Worldspace Shader;{Colours.MINOR}");
 	gl.configure(gl.ST_WORLDSPACE); #Set to use settings for worldspace shaders
 
 	#Load shader from files.
 	shaderID:int = gl.load_shader(gl.ST_WORLDSPACE, "shaders/worldspace.vert", "shaders/uv.3D.frag");
-	assert shaderID != -1, "Worldspace Shader failed to be loaded.";
+	assert (shaderID != -1), "Worldspace Shader failed to be loaded.";
 
 	#Bind a VAO with positions & 2D UV.
 	vertices:list[float] = [
@@ -90,6 +92,10 @@ def worldspaceShader(pvmMatrix:list[float]) -> None:
 		 0.0,  1.0,  1.0,    0.0, 1.0,
 	];
 	gl.add_vao(shaderID, gl.VAO_POS_UV2D, vertices);
+
+	#Add the PVM matrix as a uniform value
+	successUniform:bool = gl.add_uniform_value(shaderID, "pvmMatrix", pvmMatrix);
+	assert successUniform, "Failed to assign value to shader uniform";
 
 	#Check for shader run-errors.
 	successRun:bool = gl.run(shaderID);
@@ -117,11 +123,19 @@ def main() -> None:
 	print(f"{Colours.SUCCESS}[PY ] Module initialised.{Colours.MINOR}");
 	assert gl.window_open(), "Window failed to initialise.";
 
+	cameraID:int = gl.new_camera(fov_deg=70.0, near_z=0.1, far_z=100.0); #Create new camera
+	assert (cameraID != -1), "Camera failed to be created";
+
+	projMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.MAT_PERSPECTIVE, cameraID));
+	viewMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.MAT_VIEW, cameraID));
+	modlMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.MAT_IDENTITY)); #Identity for now.
+	pvmMatrix:glm.mat4 = projMat * viewMat * modlMat;
+
 
 	#Test running different shader types
 	screenspaceShader();
 	computeShader();
-	worldspaceShader([]);
+	worldspaceShader(pvmMatrix);
 	
 
 	"""
@@ -142,7 +156,7 @@ def main() -> None:
 
 
 if (__name__ == "__main__"):
-	try:
+	#try:
 		main();
-	except Exception as e:
-		print(f"{Colours.ERROR}[ERR] {e}{Colours.DEFAULT}");
+	#except Exception as e:
+		#print(f"{Colours.ERROR}[ERR] {e}{Colours.DEFAULT}");

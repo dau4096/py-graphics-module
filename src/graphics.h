@@ -6,7 +6,39 @@
 #include "utils.h"
 
 
+//////// PY MODULE ////////
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/numpy.h>
+#include "typecast.h"
+//////// PY MODULE ////////
+
+
 namespace graphics {
+
+	namespace matrices {
+
+		glm::mat4 getMatrix(MatrixType type, int cameraID, glm::vec3 position, glm::vec3 rotation, glm::vec3 scale);
+
+	}
+
+	namespace camera {
+
+		int assign(
+			glm::vec3 pos, glm::vec3 rot, glm::vec3 up,
+			float fov_deg, float fov_rad, float nz, float fz
+		);
+
+		glm::vec3 getUp(int cameraID);
+		void setPosition(int cameraID, glm::vec3 position);
+		void setAngle(int cameraID, glm::vec3 angle);
+		void setFOV(int cameraID, float FOVdegrees, float FOVradians);
+		void setZclip(int cameraID, float zNear, float zFar);
+
+		void remove(int cameraID);
+
+	}
+
 
 	void init(std::string name, glm::ivec2 resolution, const types::GLVersion& version);
 

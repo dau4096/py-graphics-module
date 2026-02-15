@@ -10,56 +10,68 @@ namespace types {
 
 //Version of OpenGL.
 struct GLVersion {
-    unsigned int major = 0u;
-    unsigned int minor = 0u;
-    bool embedded = false;
+	unsigned int major = 0u;
+	unsigned int minor = 0u;
+	bool embedded = false;
 
-    //Minimum supported versions [3.30 Core+ / 3.1 ES+].
-    static constexpr glm::uvec2 MIN_CORE = {3u, 3u};
-    static constexpr glm::uvec2 MIN_ES   = {3u, 1u};
+	//Minimum supported versions [3.30 Core+ / 3.1 ES+].
+	static constexpr glm::uvec2 MIN_CORE = {3u, 3u};
+	static constexpr glm::uvec2 MIN_ES   = {3u, 1u};
 
-    GLVersion(glm::uvec2 ver, bool es)
-        : major(ver.x), minor(ver.y), embedded(es) {}
+	GLVersion(glm::uvec2 ver, bool es)
+		: major(ver.x), minor(ver.y), embedded(es) {}
 
-    constexpr bool operator>=(const GLVersion& other) const {
-        return (
-        	(major > other.major) ||
-        	((major == other.major) && (minor >= other.minor))
-        );
-    }
+	constexpr bool operator>=(const GLVersion& other) const {
+		return (
+			(major > other.major) ||
+			((major == other.major) && (minor >= other.minor))
+		);
+	}
 
-    //Is this version new enough?
-    bool valid() const {
-        const glm::uvec2 minVer = (embedded) ? MIN_ES : MIN_CORE;
-        GLVersion minVersion = GLVersion(minVer, embedded);
-        return *this >= minVersion;
-    }
+	//Is this version new enough?
+	bool valid() const {
+		const glm::uvec2 minVer = (embedded) ? MIN_ES : MIN_CORE;
+		GLVersion minVersion = GLVersion(minVer, embedded);
+		return *this >= minVersion;
+	}
 
-    //Tell GLFW to use this version.
-    void use() const {
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, major);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
-        glfwWindowHint(GLFW_CLIENT_API, ((embedded) ? GLFW_OPENGL_ES_API : GLFW_OPENGL_API));
-    }
+	//Tell GLFW to use this version.
+	void use() const {
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, major);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
+		glfwWindowHint(GLFW_CLIENT_API, ((embedded) ? GLFW_OPENGL_ES_API : GLFW_OPENGL_API));
+	}
 };
 
 
 
-struct UniformValue {
-	UniformType type;
-	glm::vec4 values;
+//Different types of uniform accepted.
+using UniformStorage = std::variant<
+    float,
+    int,
+    glm::vec2, glm::ivec2, //2D vectors
+    glm::vec3, glm::ivec3, //3D vectors
+    glm::vec4, glm::ivec4, //4D vectors
+    glm::mat3, glm::mat4   //Matrices
+>;
 
-	//Many overloads;
-	UniformValue()             : type(UV_INVAL), values(0.0f, 0.0f, 0.0f, 0.0f) {}
-	UniformValue(float v)      : type(UV_FLOAT), values(v, 0.0f, 0.0f, 0.0f) {}
-	UniformValue(int v)        : type(UV_INTEG), values(static_cast<int>(v), 0.0f, 0.0f, 0.0f) {}
-	UniformValue(bool v)       : type(UV_INTEG), values(((v) ? 1 : 0), 0.0f, 0.0f, 0.0f) {} //Bool also uses 1i.
-	UniformValue(glm::vec2 v)  : type(UV_FVEC2), values(v, 0.0f, 0.0f) {}
-	UniformValue(glm::ivec2 v) : type(UV_IVEC2), values(static_cast<glm::vec2>(v), 0.0f, 0.0f) {}
-	UniformValue(glm::vec3 v)  : type(UV_FVEC3), values(v, 0.0f) {}
-	UniformValue(glm::ivec3 v) : type(UV_IVEC3), values(static_cast<glm::ivec3>(v), 0.0f) {}
-	UniformValue(glm::vec4 v)  : type(UV_FVEC4), values(v) {}
-	UniformValue(glm::ivec4 v) : type(UV_IVEC4), values(static_cast<glm::ivec4>(v)) {}
+//Inside 1 struct type.
+struct UniformValue {
+    UniformType type = UV_INVAL;
+    UniformStorage data;
+
+    UniformValue() : type(UV_INVAL), data(0.0f) {}
+    UniformValue(float v)      : type(UV_FLOAT), data(v) {}
+    UniformValue(int v)        : type(UV_INTEG), data(v) {}
+    UniformValue(bool v)       : type(UV_INTEG), data(v ? 1 : 0) {}
+    UniformValue(glm::vec2 v)  : type(UV_FVEC2), data(v) {}
+    UniformValue(glm::ivec2 v) : type(UV_IVEC2), data(v) {}
+    UniformValue(glm::vec3 v)  : type(UV_FVEC3), data(v) {}
+    UniformValue(glm::ivec3 v) : type(UV_IVEC3), data(v) {}
+    UniformValue(glm::vec4 v)  : type(UV_FVEC4), data(v) {}
+    UniformValue(glm::ivec4 v) : type(UV_IVEC4), data(v) {}
+    UniformValue(glm::mat3 v)  : type(UV_MAT33), data(v) {}
+    UniformValue(glm::mat4 v)  : type(UV_MAT44), data(v) {}
 };
 
 
@@ -137,9 +149,6 @@ private:
 	bool _linked = false; //Ready to be used or not
 	std::unordered_map<std::string, UniformValue> _uniforms; //Uniforms and their names to bind
 	ShaderCall _call; //Contains data to be used when doing shader.run();
-
-	//Convert value to correct uniform type.
-	inline GLint _convert(float value) {return static_cast<GLint>(value);}
 
 public:
 	ShaderType type = ST_NONE; //Type of shader.
@@ -290,15 +299,17 @@ public:
 			utils::cout(std::format("Applying uniform of Name=\"{}\"", name));
 
 			switch (u.type) {
-				case UniformType::UV_FLOAT: glUniform1f(loc,          u.values.x);  break;
-				case UniformType::UV_INTEG: glUniform1i(loc, _convert(u.values.x)); break;
-				case UniformType::UV_FVEC2: glUniform2f(loc,          u.values.x,           u.values.y);  break;
-				case UniformType::UV_IVEC2: glUniform2i(loc, _convert(u.values.x), _convert(u.values.y)); break;
-				case UniformType::UV_FVEC3: glUniform3f(loc,          u.values.x,           u.values.y,           u.values.z);  break;
-				case UniformType::UV_IVEC3: glUniform3i(loc, _convert(u.values.x), _convert(u.values.y), _convert(u.values.z)); break;
-				case UniformType::UV_FVEC4: glUniform4f(loc,          u.values.x,           u.values.y,           u.values.z,           u.values.w);  break;
-				case UniformType::UV_IVEC4: glUniform4i(loc, _convert(u.values.x), _convert(u.values.y), _convert(u.values.z), _convert(u.values.w)); break;
-				default: break;
+				case UniformType::UV_FLOAT: {float      data = std::get<float>(u.data);      glUniform1f(loc, data);  break;}
+				case UniformType::UV_INTEG: {int        data = std::get<int>(u.data);        glUniform1i(loc, data);  break;}
+				case UniformType::UV_FVEC2: {glm::vec2  data = std::get<glm::vec2>(u.data);  glUniform2f(loc, data.x, data.y); break;}
+				case UniformType::UV_IVEC2: {glm::ivec2 data = std::get<glm::ivec2>(u.data); glUniform2i(loc, data.x, data.y); break;}
+				case UniformType::UV_FVEC3: {glm::vec3  data = std::get<glm::vec3>(u.data);  glUniform3f(loc, data.x, data.y, data.z); break;}
+				case UniformType::UV_IVEC3: {glm::ivec3 data = std::get<glm::ivec3>(u.data); glUniform3i(loc, data.x, data.y, data.z); break;}
+				case UniformType::UV_FVEC4: {glm::vec4  data = std::get<glm::vec4>(u.data);  glUniform4f(loc, data.x, data.y, data.z, data.w); break;}
+				case UniformType::UV_IVEC4: {glm::ivec4 data = std::get<glm::ivec4>(u.data); glUniform4i(loc, data.x, data.y, data.z, data.w); break;}
+				case UniformType::UV_MAT33: {glm::mat3  data = std::get<glm::mat3>(u.data);  glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(data)); break;}
+				case UniformType::UV_MAT44: {glm::mat4  data = std::get<glm::mat4>(u.data);  glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(data)); break;}
+				default: {break;}
 			}
 		}
 	}
@@ -379,6 +390,41 @@ public:
 	bool isValid() const {return _valid;}
 };
 
+
+
+class Camera {
+private:
+	bool _valid = false;
+
+public:
+	glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 angle = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 up = glm::vec3(0.0f, 0.0f, 1.0f); //Up vector.
+	float FOV = 0.0f; //Radians
+	float nearZ = -1.0f; //Near plane
+	float farZ = 1.0f; //Far plane
+
+	void assign(glm::vec3 p, glm::vec3 a, glm::vec3 u, float fov, float nz, float fz) {
+		position = p; angle = a;
+		up = u;	FOV = fov;
+		nearZ = nz;	farZ = fz;
+		_valid = true;
+	}
+
+	bool isValid() {return _valid;}
+
+	void destroy() {
+		//Set invalid, and reset to defaults.
+		_valid = false;
+		position = glm::vec3(0.0f, 0.0f, 0.0f);
+		angle = glm::vec3(0.0f, 0.0f, 0.0f);
+		up = glm::vec3(0.0f, 0.0f, 1.0f);
+		FOV = 0.0f;
+		nearZ = -1.0f;
+		farZ = 1.0f;
+	}
+};
+
 }
 
 
@@ -388,12 +434,17 @@ namespace shared {
 //Shared GL resources
 inline GLFWwindow* window = nullptr;
 
+//Current numbers, for assigning new entries.
 inline size_t numberOfShaders;
 inline size_t numberOfTextures;
-inline std::array<types::ShaderProgram, constants::misc::MAX_SHADERS> shaders;
-inline std::array<types::Texture, constants::misc::MAX_TEXTURES> textures;
+inline size_t numberOfCameras;
+//Respective datasets;
+inline std::array<types::ShaderProgram, constants::misc::MAX_SHADERS> shaders; //All shaders the user has loaded
+inline std::array<types::Texture, constants::misc::MAX_TEXTURES> textures;     //All textures the user may bind / write to
+inline std::array<types::Camera, constants::misc::MAX_CAMERAS> cameras;        //All cameras the user controls
 
 inline bool init = false;
+inline glm::ivec2 windowResolution;
 
 }
 

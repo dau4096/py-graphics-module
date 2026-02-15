@@ -2,6 +2,14 @@
 #include "global.h"
 #include "utils.h"
 
+
+//////// PY MODULE ////////
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/numpy.h>
+#include "typecast.h"
+//////// PY MODULE ////////
+
 using namespace std;
 namespace py = pybind11;
 
@@ -61,7 +69,7 @@ void APIENTRY openGLErrorCallback(
 }
 
 
-void prepareOpenGL(glm::ivec2 windowRes) {
+void prepareOpenGL() {
 	//Set up any requirements for the context.
 	utils::cout("Configuring OpenGL-wide options");
 
@@ -72,7 +80,7 @@ void prepareOpenGL(glm::ivec2 windowRes) {
 	glDebugMessageCallback(openGLErrorCallback, nullptr);
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 
-	glViewport(0, 0, windowRes.x, windowRes.y);
+	glViewport(0, 0, shared::windowResolution.x, shared::windowResolution.y);
 
 	//Create the empty VAO used in screenspace shaders
 	glGenVertexArrays(1, &constants::display::emptyVAO); //Yes technically not constant, but it will _NEVER_ change after now.
@@ -85,6 +93,20 @@ void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int 
 
 	if (action == GLFW_PRESS) {it->second = true;} 
 	else if (action == GLFW_RELEASE) {it->second = false;}
+}
+
+
+
+bool castMat3(py::object value, glm::mat3 &out) {
+	try { out = value.cast<glm::mat3>(); return true; } catch(...) {}
+	try { out = value.cast<glm::mat<3,3,float,glm::defaultp>>(); return true; } catch(...) {}
+	return false;
+}
+
+bool castMat4(py::object value, glm::mat4 &out) {
+	try { out = value.cast<glm::mat4>(); return true; } catch(...) {}
+	try { out = value.cast<glm::mat<4,4,float,glm::defaultp>>(); return true; } catch(...) {}
+	return false;
 }
 
 
@@ -202,19 +224,104 @@ void worldspaceShader() {
 }
 
 
+inline bool IDnotInRange(int ID, size_t max) {return (ID < 0) || (ID >= static_cast<int>(max));}
+
 
 namespace matrices {
 
-glm::mat4 getProjectionMat() { //TBA
-	return glm::mat4(1.0f);
+
+
+glm::mat4 getPerspectiveMatrix(int cameraID) {
+	types::Camera& camera = shared::cameras[cameraID];
+
+	float aspectRatio = float(shared::windowResolution.x) / float(shared::windowResolution.y);
+	float verticalFOV = 2 * atan(tan(camera.FOV * 0.5f) / aspectRatio);
+	return glm::perspective(verticalFOV, aspectRatio, camera.nearZ, camera.farZ);
 }
 
-glm::mat4 getViewMat() { //TBA
-	return glm::mat4(1.0f);
+glm::mat4 getOrthographicMatrix() {
+	return glm::ortho(0, shared::windowResolution.x, 0, shared::windowResolution.y);
 }
 
-glm::mat4 getModelMat() { //TBA
-	return glm::mat4(1.0f);
+glm::mat4 getViewMatrix(int cameraID) {
+	types::Camera& camera = shared::cameras[cameraID];
+
+	float sx = sin(camera.angle.x), cx = cos(camera.angle.x);
+	float sy = sin(camera.angle.y), cy = cos(camera.angle.y);
+	glm::vec3 forward = glm::vec3(
+		sx*cy, cx*cy, sy
+	);
+
+	return glm::lookAt(camera.position, camera.position + forward, camera.up);
+}
+
+glm::mat4 getModelMatrix(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale) {
+	glm::mat4 translationMat = glm::mat4(
+		1.0f, 	0.0f, 	0.0f, 	position.x,
+		0.0f, 	1.0f, 	0.0f, 	position.y,
+		0.0f, 	0.0f, 	1.0f, 	position.z,
+		0.0f, 	0.0f, 	0.0f, 	1.0f
+	);
+
+	float sx = sin(rotation.x), cx = cos(rotation.x);
+	float sy = sin(rotation.y), cy = cos(rotation.y);
+	float sz = sin(rotation.z), cz = cos(rotation.z);
+	glm::mat4 rotationMat = glm::mat4(
+		cy*cz, 				cy*sz, 				-sy, 		0.0f,
+		sx*sy*cz-cx*sz, 	sx*sy*sz+cx*cz, 	 sx*cy, 	0.0f,
+		cx*sy*cz+sx*sz, 	cx*sy*sz-sx*cz, 	 cx*cy, 	0.0f,
+		0.0f, 				0.0f, 				 0.0f, 		1.0f
+	);
+
+	glm::mat4 scaleMat = glm::mat4(
+		scale.x,	0.0f, 		0.0f,		0.0f, 
+		0.0f, 		scale.y,	0.0f, 		0.0f, 
+		0.0f, 		0.0f, 		scale.z,	0.0f, 
+		0.0f, 		0.0f, 		0.0f, 		1.0f
+	);
+
+	return rotationMat * scaleMat * translationMat;
+}
+
+
+//Manager func
+glm::mat4 getMatrix(MatrixType type, int cameraID, glm::vec3 position, glm::vec3 rotation, glm::vec3 scale) {
+	//Get matrix of type with data.
+	//To be displayed if necessary. [OOR = Out-Of-Range]
+	bool cameraID_OOR = IDnotInRange(cameraID, constants::misc::MAX_CAMERAS);
+	std::string cameraID_OORmsg = std::format("Camera ID [{}] is invalid : Out of range [0 - {}]", cameraID, constants::misc::MAX_CAMERAS);
+
+	switch (type) {
+		case MAT_IDENTITY: {return glm::mat4(1.0f); /* Simple identity matrix. */}
+
+		case MAT_PERSPECTIVE: {
+			if (cameraID_OOR) {utils::cerr(cameraID_OORmsg);}
+			return getPerspectiveMatrix(cameraID);
+			break;
+		}
+
+		case MAT_ORTHOGRAPHIC: {
+			return getOrthographicMatrix();
+			break;
+		}
+
+		case MAT_VIEW: {
+			if (cameraID_OOR) {utils::cerr(cameraID_OORmsg);}
+			return getViewMatrix(cameraID);
+			break;
+		}
+
+		case MAT_MODEL: {
+			return getModelMatrix(position, rotation, scale);
+			break;
+		}
+
+		default: {
+			utils::cerr("Unknown matrix type. Must be valid MatrixType enum [MAT_PERSPECTIVE, MAT_ORTHOGRAPHIC, MAT_VIEW, MAT_MODEL]");
+		}
+	}
+
+	return glm::mat4(0.0f);
 }
 
 }
@@ -222,7 +329,129 @@ glm::mat4 getModelMat() { //TBA
 
 
 
-bool inline shaderIDnotInRange(int shaderID) {return (shaderID < 0) || (shaderID >= static_cast<int>(shared::shaders.size()));}
+
+
+
+namespace camera {
+
+
+int assign(
+	glm::vec3 pos, glm::vec3 rot, glm::vec3 up,
+	float FOVdegrees, float FOVradians, float nz, float fz
+) {
+	if (shared::numberOfCameras >= constants::misc::MAX_CAMERAS) {
+		utils::cerr(std::format("Maximum cameras exceeded : [{}]", constants::misc::MAX_CAMERAS));
+	}
+	if (glm::length(up) < 1e-5f) {
+		utils::cerr(std::format("Camera [{}] up-direction cannot be (0, 0, 0).", shared::numberOfCameras));
+	}
+
+	bool useRad = FOVradians > 0.0f;
+	if (!useRad && (FOVdegrees <= 0.0f)) {utils::cout(std::format(
+		"Warning : Camera [{}] FOV is 0.", shared::numberOfCameras
+	));}
+
+	//Convert to radians, and clamp to range [-π → π | -180* → 180*]
+	float fovFract = (useRad) ? (FOVradians / constants::maths::PI) : (FOVdegrees / 180.0f);
+	float fov = glm::fract(abs(fovFract)) * constants::maths::PI;
+
+	shared::cameras[shared::numberOfCameras].assign(pos, rot, up, fov, nz, fz); //Assign values to this entry.
+
+	return shared::numberOfCameras++; //Auto-increments.
+}
+
+
+glm::vec3 getUp(int cameraID) {
+	if (IDnotInRange(cameraID, constants::misc::MAX_CAMERAS)) {
+		utils::cerr(std::format("Camera ID [{}] is invalid : Out of range [0 - {}]", cameraID, constants::misc::MAX_CAMERAS));
+	}
+	if (!(shared::cameras[cameraID].isValid())) {
+		utils::cerr(std::format("Camera ID [{}] is invalid : Was never initialised, or was destroyed.", cameraID));
+	}
+
+	return shared::cameras[cameraID].up;
+}
+
+
+void setPosition(int cameraID, glm::vec3 position) {
+	if (IDnotInRange(cameraID, constants::misc::MAX_CAMERAS)) {
+		utils::cerr(std::format("Camera ID [{}] is invalid : Out of range [0 - {}]", cameraID, constants::misc::MAX_CAMERAS));
+	}
+	if (!(shared::cameras[cameraID].isValid())) {
+		utils::cerr(std::format("Camera ID [{}] is invalid : Was never initialised, or was destroyed.", cameraID));
+	}
+
+	shared::cameras[cameraID].position = position;
+}
+
+
+void setAngle(int cameraID, glm::vec3 angle) {
+	if (IDnotInRange(cameraID, constants::misc::MAX_CAMERAS)) {
+		utils::cerr(std::format("Camera ID [{}] is invalid : Out of range [0 - {}]", cameraID, constants::misc::MAX_CAMERAS));
+	}
+	if (!(shared::cameras[cameraID].isValid())) {
+		utils::cerr(std::format("Camera ID [{}] is invalid : Was never initialised, or was destroyed.", cameraID));
+	}
+
+	shared::cameras[cameraID].angle = angle;
+}
+
+
+void setFOV(int cameraID, float FOVdegrees, float FOVradians) {
+	if (IDnotInRange(cameraID, constants::misc::MAX_CAMERAS)) {
+		utils::cerr(std::format("Camera ID [{}] is invalid : Out of range [0 - {}]", cameraID, constants::misc::MAX_CAMERAS));
+	}
+	if (!(shared::cameras[cameraID].isValid())) {
+		utils::cerr(std::format("Camera ID [{}] is invalid : Was never initialised, or was destroyed.", cameraID));
+	}
+
+	bool useRad = FOVradians > 0.0f;
+	if (!useRad && (FOVdegrees <= 0.0f)) {utils::cout(std::format(
+		"Warning : Camera [{}] FOV is 0.", cameraID
+	));}
+
+	//Convert to radians, and clamp to range [-π → π | -180* → 180*]
+	float fovFract = (useRad) ? (FOVradians / constants::maths::PI) : (FOVdegrees / 180.0f);
+	float fov = glm::fract(abs(fovFract)) * constants::maths::PI;
+
+	shared::cameras[cameraID].FOV = fov;
+}
+
+
+void setZclip(int cameraID, float zNear, float zFar) {
+	if (IDnotInRange(cameraID, constants::misc::MAX_CAMERAS)) {
+		utils::cerr(std::format("Camera ID [{}] is invalid : Out of range [0 - {}]", cameraID, constants::misc::MAX_CAMERAS));
+	}
+	if (!(shared::cameras[cameraID].isValid())) {
+		utils::cerr(std::format("Camera ID [{}] is invalid : Was never initialised, or was destroyed.", cameraID));
+	}
+
+	if (zNear > zFar) {
+		utils::cerr(std::format("Near plane [{}] must be closer than the far plane [{}].", zNear, zFar));
+	}
+
+	shared::cameras[cameraID].nearZ = zNear;
+	shared::cameras[cameraID].farZ = zFar;
+}
+
+
+void remove(int cameraID) {
+	if (IDnotInRange(cameraID, constants::misc::MAX_CAMERAS)) {
+		utils::cerr(std::format("Camera ID [{}] is invalid : Out of range [0 - {}]", cameraID, constants::misc::MAX_CAMERAS));
+	}
+	if (!(shared::cameras[cameraID].isValid())) {
+		utils::cerr(std::format("Camera ID [{}] is invalid : Was never initialised, or was destroyed.", cameraID));
+	}
+
+	shared::cameras[cameraID].destroy(); //Set invalid and reset values to defaults.
+}
+
+
+}
+
+
+
+
 
 
 void init(std::string name, glm::ivec2 resolution, const types::GLVersion& openGLVersion) {
@@ -239,6 +468,7 @@ void init(std::string name, glm::ivec2 resolution, const types::GLVersion& openG
 		));
 		return;
 	}
+	shared::windowResolution = resolution;
 
 
 	//GLFW
@@ -268,7 +498,7 @@ void init(std::string name, glm::ivec2 resolution, const types::GLVersion& openG
 
 
 	//OpenGL
-	prepareOpenGL(resolution);
+	prepareOpenGL();
 
 
 
@@ -313,33 +543,59 @@ void configure(ShaderType type) {
 
 
 bool addUniformValue(int shaderID, std::string uniformName, py::object value) {
-	if (shaderIDnotInRange(shaderID)) {return false;}
+	if (IDnotInRange(shaderID, constants::misc::MAX_SHADERS)) {
+		utils::cerr(std::format("Shader ID [{}] is invalid : Out of range [0 - {}]", shaderID, constants::misc::MAX_SHADERS));
+	}
 
 	types::ShaderProgram* shader = &(shared::shaders[shaderID]);
-	if (py::isinstance<py::int_>(value)       )	{shader->setUniform(uniformName, value.cast<int>());       } //UV_INT
-	else if (py::isinstance<py::float_>(value)) {shader->setUniform(uniformName, value.cast<float>());     } //UV_FLOAT
-	else if (py::isinstance<py::bool_>(value) )	{shader->setUniform(uniformName, value.cast<bool>());      } //UV_BOOL
-	else if (py::isinstance<glm::vec2>(value) )	{shader->setUniform(uniformName, value.cast<glm::vec2>()); } //UV_FVEC2
-	else if (py::isinstance<glm::ivec2>(value)) {shader->setUniform(uniformName, value.cast<glm::ivec2>());} //UV_IVEC2
-	else if (py::isinstance<glm::vec3>(value) )	{shader->setUniform(uniformName, value.cast<glm::vec3>()); } //UV_FVEC3
-	else if (py::isinstance<glm::ivec3>(value)) {shader->setUniform(uniformName, value.cast<glm::ivec3>());} //UV_IVEC3
-	else if (py::isinstance<glm::vec4>(value) )	{shader->setUniform(uniformName, value.cast<glm::vec4>()); } //UV_FVEC4
-	else if (py::isinstance<glm::ivec4>(value)) {shader->setUniform(uniformName, value.cast<glm::ivec4>());} //UV_IVEC4
-	else {utils::cerr("Unsupported uniform type found.");}
+	utils::cout(std::format(
+		"Added/Updated uniform \"{}\": [{}] = {}",
+		uniformName, //Name of the uniform being assigned
+		std::string(py::str(py::type::of(value))), //Type of the uniform
+		std::string(py::str(value)) //Value being assigned
+	));
 
-	return true;
+
+	try {
+		//1D values
+		if (py::isinstance<py::int_>(value)) {shader->setUniform(uniformName, value.cast<int>()); return true;}
+		if (py::isinstance<py::float_>(value)) {shader->setUniform(uniformName, value.cast<float>()); return true;}
+		if (py::isinstance<py::bool_>(value)) {shader->setUniform(uniformName, value.cast<bool>()); return true;}
+
+		//Vectors
+		try {shader->setUniform(uniformName, value.cast<glm::vec2>()); return true;} catch(...) {}
+		try {shader->setUniform(uniformName, value.cast<glm::vec3>()); return true;} catch(...) {}
+		try {shader->setUniform(uniformName, value.cast<glm::vec4>()); return true;} catch(...) {}
+
+		//Matrices
+		glm::mat3 mat3; glm::mat4 mat4;
+		if (castMat3(value, mat3)) {shader->setUniform(uniformName, mat3); return true;}
+		if (castMat4(value, mat4)) {shader->setUniform(uniformName, mat4); return true;}
+
+
+	} catch (const py::cast_error& e) {
+		utils::cerr(std::format("Failed to cast uniform {}: {}", uniformName, e.what()));
+		return false;
+	}
+
+	utils::cerr(std::format("Unsupported uniform type for '{}'", uniformName));
+	return false;
 }
 
 
 bool addVAO(int shaderID, VAOFormat format, std::vector<float> values) {
-	if (shaderIDnotInRange(shaderID)) {return false; /* Not in the shader list. */}
+	if (IDnotInRange(shaderID, constants::misc::MAX_SHADERS)) {
+		utils::cerr(std::format("Shader ID [{}] is invalid : Out of range [0 - {}]", shaderID, constants::misc::MAX_SHADERS));
+	}
 	shared::shaders[shaderID].setVAO(format, values);
 	return true;
 }
 
 
 bool runShader(int shaderID, glm::uvec3 dispatchSize) {
-	if (shaderIDnotInRange(shaderID)) {return false; /* Not in the shader list. */}
+	if (IDnotInRange(shaderID, constants::misc::MAX_SHADERS)) {
+		utils::cerr(std::format("Shader ID [{}] is invalid : Out of range [0 - {}]", shaderID, constants::misc::MAX_SHADERS));
+	}
 	types::ShaderProgram& shader = shared::shaders[shaderID];
 
 	shader.use();

@@ -4,14 +4,18 @@
 #include "includes.h"
 
 
+//Types of uniforms to accept
 enum UniformType {
 	UV_INVAL, //Invalid
 	UV_FLOAT, UV_INTEG, //1D values
 	UV_FVEC2, UV_IVEC2, //2D values
 	UV_FVEC3, UV_IVEC3, //3D values
 	UV_FVEC4, UV_IVEC4, //4D values
+	UV_MAT33, UV_MAT44  //Matrices
 };
 
+
+//Types of shaders to load
 enum ShaderType {
 	ST_NONE,
 	ST_WORLDSPACE,
@@ -19,6 +23,8 @@ enum ShaderType {
 	ST_COMPUTE,
 };
 
+
+//Formats for VAOs
 enum VAOFormat {
 	//2D → UV.xy
 	//3D → UV.xy && textureID (example usage)
@@ -28,6 +34,17 @@ enum VAOFormat {
 	VAO_POS_NORMAL,                          //Position, normal.
 	VAO_POS_UV2D_NORMAL, VAO_POS_UV3D_NORMAL //Position, UV, normal.
 };
+
+
+//Matrix types to create
+enum MatrixType {
+	MAT_IDENTITY,
+	MAT_PERSPECTIVE,
+	MAT_ORTHOGRAPHIC,
+	MAT_VIEW,
+	MAT_MODEL,
+};
+
 
 
 
@@ -90,34 +107,47 @@ namespace shared {inline bool verbose = false; /* Should module give console out
 
 namespace constants {
 
-namespace display {
-	//Access via constants::display::value
-	inline GLuint emptyVAO;
+	namespace maths {
+		//Mathematical constants
+		constexpr float PI = 3.141592f;
+		constexpr float PI2 = PI * 2.0f;
+		constexpr float EXP = 2.718281f;
+		constexpr float INF = std::numeric_limits<float>::infinity();
 
-	static const std::unordered_map<VAOFormat, size_t> vertexFormatSizeMap = {
-		{VAO_EMPTY, 0u}, {VAO_POS_ONLY, 3u}, {VAO_POS_NORMAL, 6u},
-		{VAO_POS_UV2D, 5u}, {VAO_POS_UV3D, 6u},
-		{VAO_POS_UV2D_NORMAL, 8u}, {VAO_POS_UV3D_NORMAL, 9u},
-	};
-	static const std::map<VAOFormat, std::vector<Attribute>> layouts = {
-		{VAO_EMPTY,			 	{              }},
-		{VAO_POS_ONLY,		 	{{3},          }},
-		{VAO_POS_UV2D,       	{{3}, {2},     }},
-		{VAO_POS_UV3D,       	{{3}, {3},     }},
-		{VAO_POS_NORMAL,     	{{3}, {3},     }},
-		{VAO_POS_UV2D_NORMAL,	{{3}, {2}, {3},}},
-		{VAO_POS_UV3D_NORMAL,	{{3}, {3}, {3},}},
-	};
-}
+		constexpr float TO_RAD = 0.017453f; //PI/180
+		constexpr float TO_DEG = 57.29577f; //180/PI
 
-namespace misc {
-	//Access via constants::misc::value
-	constexpr int GL_ERROR_LENGTH = 1024;
-	constexpr bool PAUSE_ON_OPENGL_ERROR = true;
+	}
 
-	constexpr size_t MAX_SHADERS  = 32u;
-	constexpr size_t MAX_TEXTURES = 64u;
-}
+	namespace display {
+		//Access via constants::display::value
+		inline GLuint emptyVAO;
+
+		static const std::unordered_map<VAOFormat, size_t> vertexFormatSizeMap = {
+			{VAO_EMPTY, 0u}, {VAO_POS_ONLY, 3u}, {VAO_POS_NORMAL, 6u},
+			{VAO_POS_UV2D, 5u}, {VAO_POS_UV3D, 6u},
+			{VAO_POS_UV2D_NORMAL, 8u}, {VAO_POS_UV3D_NORMAL, 9u},
+		};
+		static const std::map<VAOFormat, std::vector<Attribute>> layouts = {
+			{VAO_EMPTY,			 	{              }},
+			{VAO_POS_ONLY,		 	{{3},          }},
+			{VAO_POS_UV2D,       	{{3}, {2},     }},
+			{VAO_POS_UV3D,       	{{3}, {3},     }},
+			{VAO_POS_NORMAL,     	{{3}, {3},     }},
+			{VAO_POS_UV2D_NORMAL,	{{3}, {2}, {3},}},
+			{VAO_POS_UV3D_NORMAL,	{{3}, {3}, {3},}},
+		};
+	}
+
+	namespace misc {
+		//Access via constants::misc::value
+		constexpr int GL_ERROR_LENGTH = 1024;
+		constexpr bool PAUSE_ON_OPENGL_ERROR = true;
+
+		constexpr size_t MAX_SHADERS  = 32u;
+		constexpr size_t MAX_TEXTURES = 64u;
+		constexpr size_t MAX_CAMERAS = 4u;
+	}
 
 }
 
