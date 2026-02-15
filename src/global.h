@@ -271,7 +271,7 @@ public:
 		unsigned int attribID = 0;
 		//Loop through and set attributes based on the format. For instance, VAO_POS_UV2D_NORMAL = {3, 2, 3}.
 		for (const Attribute& attr : (constants::display::layouts.at(format))) {
-			utils::cout(std::format("Adding attribute with size: [{} VALUES, {} BYTES]", attr.size, attr.size*sizeof(float)));
+			utils::cout(V_DEBUG, std::format("Adding attribute with size: [{} VALUES, {} BYTES]", attr.size, attr.size*sizeof(float)));
 			glVertexAttribPointer(attribID, attr.size, GL_FLOAT, GL_FALSE, vertexSizeSingular * sizeof(float), (void*)(offset * sizeof(float)));
 			glEnableVertexAttribArray(attribID++);
 			offset += attr.size;

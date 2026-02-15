@@ -549,11 +549,11 @@ bool addUniformValue(int shaderID, std::string uniformName, py::object value) {
 
 	types::ShaderProgram* shader = &(shared::shaders[shaderID]);
 	utils::cout(std::format(
-		"Added/Updated uniform \"{}\": [{}] = {}",
+		"Added/Updated uniform \"{}\": [{}]",
 		uniformName, //Name of the uniform being assigned
-		std::string(py::str(py::type::of(value))), //Type of the uniform
-		std::string(py::str(value)) //Value being assigned
+		std::string(py::str(py::type::of(value))) //Type of the uniform
 	));
+	utils::cout_inline(V_DEBUG, std::string(py::str(value))); //Value being assigned
 
 
 	try {

@@ -5,22 +5,50 @@
 #include "constants.h"
 
 
+
+static bool verbosityAllowed(Verbosity vLevel) {
+	return (
+		(vLevel == V_SILENT) ||
+		((vLevel == V_MINIMAL) && (shared::verbose == V_MINIMAL || shared::verbose == V_DEBUG)) ||
+		((vLevel == V_DEBUG) && (shared::verbose == V_DEBUG))
+	);
+}
+
 namespace utils {
 
 
+//Default cout defs
 template<typename... Args>
 static inline void cout_inline(Args&&... args) {
-	if (!shared::verbose) {return; /* Don't output to console. */}
+	if (shared::verbose == V_SILENT) {return; /* Don't output to console. */}
 	((std::cout << args << " "), ...); //Requires C++17 or more.
 	std::cout << std::flush;
 }
 template<typename... Args>
 static inline void cout(Args&&... args) {
-	if (!shared::verbose) {return; /* Don't output to console. */}
+	if (shared::verbose == V_SILENT) {return; /* Don't output to console. */}
 	std::cout << "[C++] ";
 	((std::cout << args << " "), ...); //Requires C++17 or more.
 	std::cout << std::endl;
 }
+
+
+//Custom verbosity level overload defs
+template<typename... Args>
+static inline void cout_inline(Verbosity vLevel, Args&&... args) {
+	if (!verbosityAllowed(vLevel)) {return; /* Don't output to console. */}
+	((std::cout << args << " "), ...); //Requires C++17 or more.
+	std::cout << std::flush;
+}
+template<typename... Args>
+static inline void cout(Verbosity vLevel, Args&&... args) {
+	if (!verbosityAllowed(vLevel)) {return; /* Don't output to console. */}
+	std::cout << "[C++] ";
+	((std::cout << args << " "), ...); //Requires C++17 or more.
+	std::cout << std::endl;
+}
+
+
 
 template<typename... Args>
 static inline void cerr(Args&&... args) {

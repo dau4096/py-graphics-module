@@ -4,6 +4,14 @@
 #include "includes.h"
 
 
+//Level of console output the module is allowed
+enum Verbosity {
+	V_SILENT,  //No output at all
+	V_MINIMAL, //Some output
+	V_DEBUG      //Debugging level outpit
+};
+
+
 //Types of uniforms to accept
 enum UniformType {
 	UV_INVAL, //Invalid
@@ -103,7 +111,7 @@ struct Attribute {
 };
 
 
-namespace shared {inline bool verbose = false; /* Should module give console output for actions taken? */}
+namespace shared {inline Verbosity verbose = V_SILENT; /* Should module give console output for actions taken? */}
 
 namespace constants {
 

@@ -115,7 +115,7 @@ def worldspaceShader(pvmMatrix:glm.mat4) -> None:
 
 def main() -> None:
 	print(f"{Colours.WARNING}[PY ] Running test python script;{Colours.MINOR}");
-	gl.verbose(); #Let it output to console.
+	gl.verbose(gl.V_MINIMAL); #Let it output to console.
 
 
 	#Test init func
