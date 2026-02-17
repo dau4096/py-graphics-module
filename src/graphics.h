@@ -45,7 +45,7 @@ namespace graphics {
 	int loadShader(ShaderType type, std::string filePathA, std::string filePathB);
 	void configure(ShaderType type);
 	bool addUniformValue(int shaderID, std::string uniformName, pybind11::object value);
-	bool addVAO(int shaderID, VAOFormat format, std::vector<float> values);
+	bool addVAO(int shaderID, VAOFormat format, std::vector<float> values, std::vector<int> indicesSigned);
 	bool runShader(int shaderID, glm::uvec3 dispatchSize);
 
 	void terminate();

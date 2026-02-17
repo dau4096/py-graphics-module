@@ -75,14 +75,19 @@ void requestClose() {
 
 
 
-void manageAddVAO(int shader, VAOFormat format, py::array_t<float> array) {
+void manageAddVAO(int shader, VAOFormat format, py::array_t<float> vertArr, py::array_t<int> indArray) {
 	//Translate python array type (list, tuple, numpy.ndarray) into vector and pass to graphics::addVao() func.
-	py::buffer_info info = array.request();
-	float* data = static_cast<float*>(info.ptr);
-	size_t size = info.size;
+	py::buffer_info vInfo = vertArr.request();
+	float* vData = static_cast<float*>(vInfo.ptr);
+	size_t vSize = vInfo.size;
+	std::vector<float> vertices = std::vector<float>(vData, vData + vSize);
 
-	std::vector<float> vec = std::vector<float>(data, data + size);
-	graphics::addVAO(shader, format, vec);
+	py::buffer_info iInfo = indArray.request();
+	int* iData = static_cast<int*>(iInfo.ptr);
+	size_t iSize = iInfo.size;
+	std::vector<int> indices = std::vector<int>(iData, iData + iSize);
+
+	graphics::addVAO(shader, format, vertices, indices);
 }
 
 
@@ -90,8 +95,6 @@ void manageInit(std::string name, glm::ivec2 resolution, glm::uvec2 versionUV3, 
 	types::GLVersion version = types::GLVersion(versionUV3, !core); //Takes "Is embedded" but we have "Is core". They are opposites.
 	graphics::init(name, resolution, version);
 }
-
-
 
 
 
@@ -229,7 +232,8 @@ PYBIND11_MODULE(gl, m) {
 	m.def(
 		"add_vao", &manageAddVAO,
 		py::arg("shader"), py::arg("format")=VAO_EMPTY,
-		py::arg("values")=py::list(), documentation::shader::addVAO
+		py::arg("vertices")=py::list(), py::arg("indices")=py::list(),
+		documentation::shader::addVAO
 	);
 
 

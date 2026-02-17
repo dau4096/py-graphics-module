@@ -83,12 +83,12 @@ struct UniformValue {
 struct ShaderCall {
 	glm::uvec3 localSize = glm::uvec3(0u, 0u, 0u);
 	GLuint VAO = 0u;
-	unsigned int numberOfVertices = 0u;
+	unsigned int numberOfIndices = 0u;
 	bool hasVAO = false;
 
-	ShaderCall() : localSize(0u, 0u, 0u), VAO(0u), numberOfVertices(0u), hasVAO(false) {}
-	ShaderCall(glm::uvec3& ls) : localSize(ls), VAO(0u), numberOfVertices(0u), hasVAO(false) {}
-	ShaderCall(GLuint vao, unsigned int nv)	: localSize(0u, 0u, 0u), VAO(vao), numberOfVertices(nv), hasVAO(true) {}
+	ShaderCall() : localSize(0u, 0u, 0u), VAO(0u), numberOfIndices(0u), hasVAO(false) {}
+	ShaderCall(glm::uvec3& ls) : localSize(ls), VAO(0u), numberOfIndices(0u), hasVAO(false) {}
+	ShaderCall(GLuint vao, unsigned int nv)	: localSize(0u, 0u, 0u), VAO(vao), numberOfIndices(nv), hasVAO(true) {}
 };
 
 
@@ -235,7 +235,7 @@ public:
 	}
 
 
-	void setVAO(VAOFormat format, std::vector<float>& values) {
+	void setVAO(VAOFormat format, std::vector<float>& vertices, std::vector<GLuint>& indices) {
 		//Create VAO with given format and values.
 		std::unordered_map<VAOFormat, std::string> formatNameMap = std::unordered_map<VAOFormat, std::string>{
 			{VAO_EMPTY, "VAO_EMPTY"}, 						{VAO_POS_ONLY, "VAO_POS_ONLY"},				 {VAO_POS_NORMAL, "VAO_POS_NORMAL"},
@@ -246,12 +246,13 @@ public:
 			"Creating VAO with format [{}]", formatNameMap[format]
 		));
 		if (format == VAO_EMPTY) {
-			_call.numberOfVertices = 0u;
+			_call.numberOfIndices = 0u;
 			_call.VAO = constants::display::emptyVAO;
 			return;
 		}
 		size_t vertexSizeSingular = constants::display::vertexFormatSizeMap.at(format);
-		_call.numberOfVertices = values.size() / vertexSizeSingular;
+		unsigned int numberOfVertices = vertices.size() / vertexSizeSingular; //3 indices per triangle
+		_call.numberOfIndices = indices.size();
 
 	
 		glGenVertexArrays(1, &(_call.VAO));
@@ -260,11 +261,11 @@ public:
 		GLuint VBO, EBO;
 		glGenBuffers(1, &VBO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * values.size(), nullptr, GL_DYNAMIC_DRAW); //Reserve space
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_DYNAMIC_DRAW); //Reserve space
 
 		glGenBuffers(1, &EBO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, _call.numberOfVertices, nullptr, GL_DYNAMIC_DRAW); //Reserve space
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, _call.numberOfIndices * sizeof(GLuint), indices.data(), GL_DYNAMIC_DRAW); //Reserve space
 
 
 		size_t offset = 0u;
@@ -340,7 +341,7 @@ public:
 					return false;
 				}
 				glBindVertexArray(_call.VAO);
-				glDrawElements(GL_TRIANGLES, _call.numberOfVertices, GL_UNSIGNED_INT, nullptr);
+				glDrawElements(GL_TRIANGLES, _call.numberOfIndices, GL_UNSIGNED_INT, nullptr);
 				glBindVertexArray(0);
 				break;
 			}

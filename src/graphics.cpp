@@ -583,11 +583,12 @@ bool addUniformValue(int shaderID, std::string uniformName, py::object value) {
 }
 
 
-bool addVAO(int shaderID, VAOFormat format, std::vector<float> values) {
+bool addVAO(int shaderID, VAOFormat format, std::vector<float> vertices, std::vector<int> indicesSigned) {
 	if (IDnotInRange(shaderID, constants::misc::MAX_SHADERS)) {
 		utils::cerr(std::format("Shader ID [{}] is invalid : Out of range [0 - {}]", shaderID, constants::misc::MAX_SHADERS));
 	}
-	shared::shaders[shaderID].setVAO(format, values);
+	std::vector<GLuint> indicesUnsigned = std::vector<GLuint>(indicesSigned.begin(), indicesSigned.end());
+	shared::shaders[shaderID].setVAO(format, vertices, indicesUnsigned);
 	return true;
 }
 

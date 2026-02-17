@@ -136,6 +136,7 @@ def main() -> None:
 	screenspaceShader();
 	computeShader();
 	worldspaceShader(pvmMatrix);
+	print(f"{Colours.SUCCESS}Success : All tests pass.{Colours.MINOR}");
 	
 
 	"""
@@ -151,7 +152,7 @@ def main() -> None:
 
 
 	gl.terminate(); #Test shutdown
-	print(f"{Colours.WARNING}[PY ] Module terminated {Colours.DEFAULT}:{Colours.SUCCESS} All tests pass.{Colours.DEFAULT}");
+	print(f"{Colours.WARNING}[PY ] Module terminated {Colours.DEFAULT}");
 
 
 
