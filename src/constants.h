@@ -54,6 +54,14 @@ enum MatrixType {
 };
 
 
+//Camera directions
+enum CameraDirection {
+	CD_FORWARD,
+	CD_RIGHT,
+	CD_UP
+};
+
+
 
 
 inline std::unordered_map<int, bool> currentKeyMap = { //GLFW key enums and if they're pressed.
@@ -103,6 +111,7 @@ inline std::unordered_map<int, bool> currentKeyMap = { //GLFW key enums and if t
 	{GLFW_KEY_F12, false},
 };
 inline std::unordered_map<int, bool> previousKeyMap = currentKeyMap;
+inline glm::dvec2 currentCursorPosition, previousCursorPosition;
 
 
 

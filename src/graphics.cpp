@@ -208,7 +208,7 @@ void screenspaceShader() {
 }
 
 
-void worldspaceShader() {
+void worldspaceShader(bool cull) {
 	//For shaders that draw onto triangles, 3D.
 	utils::cout("Configuring OpenGL for [ST_WORLDSPACE]");
 	glEnable(GL_DEPTH_TEST);
@@ -217,8 +217,7 @@ void worldspaceShader() {
 	glClearDepth(1.0f);
 
 	glEnable(GL_BLEND);
-	glEnable(GL_CULL_FACE);
-
+	if (cull) {glEnable(GL_CULL_FACE);}
 }
 
 }
@@ -251,6 +250,9 @@ glm::mat4 getViewMatrix(int cameraID) {
 	glm::vec3 forward = glm::vec3(
 		sx*cy, cx*cy, sy
 	);
+
+	camera.forward = forward;
+	camera.right = glm::cross(forward, camera.up);
 
 	return glm::lookAt(camera.position, camera.position + forward, camera.up);
 }
@@ -361,7 +363,7 @@ int assign(
 }
 
 
-glm::vec3 getUp(int cameraID) {
+glm::vec3 getDirection(int cameraID, CameraDirection cDir) {
 	if (IDnotInRange(cameraID, constants::misc::MAX_CAMERAS)) {
 		utils::cerr(std::format("Camera ID [{}] is invalid : Out of range [0 - {}]", cameraID, constants::misc::MAX_CAMERAS));
 	}
@@ -369,7 +371,23 @@ glm::vec3 getUp(int cameraID) {
 		utils::cerr(std::format("Camera ID [{}] is invalid : Was never initialised, or was destroyed.", cameraID));
 	}
 
-	return shared::cameras[cameraID].up;
+	switch (cDir) {
+		case CD_FORWARD: {
+			return shared::cameras[cameraID].forward;
+		}
+		case CD_RIGHT: {
+			return shared::cameras[cameraID].right;
+		}
+		case CD_UP: {
+			return shared::cameras[cameraID].up;
+		}
+		default: {
+			utils::cerr(std::format(
+				"Unknown camera direction: {}", std::to_string(cDir)
+			));
+		}
+	}
+	return glm::vec3(0.0f, 0.0f, 0.0f);
 }
 
 
@@ -525,7 +543,7 @@ int loadShader(ShaderType type, std::string filePathA, std::string filePathB) {
 }
 
 
-void configure(ShaderType type) {
+void configure(ShaderType type, bool cull) {
 	if (!shared::init) {
 		utils::cerr("You need to initialise GL first → gl.init()");
 		return;
@@ -534,7 +552,7 @@ void configure(ShaderType type) {
 	switch (type) {
 		case ST_COMPUTE:     {return config::computeShader();}
 		case ST_SCREENSPACE: {return config::screenspaceShader();}
-		case ST_WORLDSPACE:  {return config::worldspaceShader();}
+		case ST_WORLDSPACE:  {return config::worldspaceShader(cull);}
 		default:             {return; /* Invalid, unknown. */}
 	}
 	return; //Fallback

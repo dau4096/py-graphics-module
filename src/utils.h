@@ -1,5 +1,4 @@
-#ifndef UTILS_H
-#define UTILS_H
+#pragma once
 
 #include "includes.h"
 #include "constants.h"
@@ -111,4 +110,3 @@ static inline std::string getTimestamp() {
 
 }
 
-#endif

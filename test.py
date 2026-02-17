@@ -24,6 +24,103 @@ class Colours:
 
 
 
+
+
+
+######## GENERAL TESTING ########
+
+
+cam:dict[str, glm.vec3] = {
+	"position": glm.vec3(0.0, -1.0, 0.0),
+	"angle": glm.vec3(0.0, 0.0, 0.0)
+};
+CURSOR_SPEED:float = 0.0025;
+MOVE_SPEED:float = 0.1;
+
+def updateCamera(cameraID:int) -> None:
+	#Get cursor & keyboard inputs and upd the camera.
+	forward:glm.vec3 = glm.vec3(gl.get_camera_direction(cameraID, gl.CD_FORWARD));
+	right:glm.vec3 = glm.vec3(gl.get_camera_direction(cameraID, gl.CD_RIGHT));
+	up:glm.vec3 = glm.vec3(gl.get_camera_direction(cameraID, gl.CD_UP));
+	fb:int = 0; lr:int = 0; ud:int = 0;
+
+	if (gl.is_key_held(gl.KEY_W)): fb += 1;
+	if (gl.is_key_held(gl.KEY_S)): fb -= 1;
+	if (gl.is_key_held(gl.KEY_D)): lr += 1;
+	if (gl.is_key_held(gl.KEY_A)): lr -= 1;
+	if (gl.is_key_held(gl.KEY_E)): ud += 1;
+	if (gl.is_key_held(gl.KEY_Q)): ud -= 1;
+
+
+	cam["position"] += forward * MOVE_SPEED * fb;
+	cam["position"] += right * MOVE_SPEED * lr;
+	cam["position"] += up * MOVE_SPEED * ud;
+
+
+	if (gl.is_key_held(gl.KEY_1)): gl.cursor_show();
+	else:
+		gl.cursor_hide();
+		cursorDelta:glm.vec2 = glm.vec2(gl.get_cursor_movement());
+		delta:glm.vec2 = glm.vec3(cursorDelta.x, -cursorDelta.y, 0.0);
+		cam["angle"] += delta * CURSOR_SPEED;
+
+
+	gl.camera_set_new_position(cameraID, cam["position"]);
+	gl.camera_set_new_angle(cameraID, cam["angle"]);
+
+
+
+def doExample3D(cameraID:int, projMat:glm.mat4, modlMat:glm.mat4) -> None:
+	gl.init(name="Example 3D scene", resolution=(800, 600), version=(4, 6));
+
+	#Load the shader.
+	shaderID:int = gl.load_shader(gl.ST_WORLDSPACE, "shaders/worldspace.vert", "shaders/uv.3D.frag");
+
+	#Bind a VAO with positions & 2D UV.
+	vertices:list[float] = [
+		#Example dataset of vertices.
+		-1.0,  1.0,  0.0,	 0.0, 0.0,
+		 1.0,  1.0,  0.0,    1.0, 0.0,
+		 0.0,  1.0,  1.0,    0.0, 1.0,
+		 0.0,  1.0, -1.0,    1.0, 1.0,
+	];
+	indices:list[int] = [
+		#Singular triangle.
+		0, 1, 2,
+		0, 1, 3,
+	];
+
+
+	gl.add_vao(shaderID, gl.VAO_POS_UV2D, vertices, indices);
+
+	gl.verbose(gl.V_SILENT);
+	while (gl.window_open() and (not gl.is_key_held(gl.KEY_ESCAPE))): #Example Main program loop.
+		gl.poll_events(); #Look for events
+
+		#Run stages of frame
+		#Update the camera
+		updateCamera(cameraID);
+
+		#Matrix creation
+		viewMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.MAT_VIEW, cameraID));
+		pvmMatrix:glm.mat4 = projMat * viewMat * modlMat;
+		gl.add_uniform_value(shaderID, "pvmMatrix", pvmMatrix);
+
+		gl.run(shaderID);
+
+		gl.update_window(); #Update the screen with the next frame.
+
+	gl.terminate(); #Close after.
+
+######## GENERAL TESTING ########
+
+
+
+
+
+
+
+
 ######## UNIT TESTS ########
 
 
@@ -125,6 +222,8 @@ def main() -> None:
 
 	cameraID:int = gl.new_camera(fov_deg=70.0, near_z=0.1, far_z=100.0); #Create new camera
 	assert (cameraID != -1), "Camera failed to be created";
+	gl.camera_set_new_angle(cameraID, glm.vec3(0.0, 0.0, 0.0));
+
 
 	projMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.MAT_PERSPECTIVE, cameraID));
 	viewMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.MAT_VIEW, cameraID));
@@ -137,22 +236,13 @@ def main() -> None:
 	computeShader();
 	worldspaceShader(pvmMatrix);
 	print(f"{Colours.SUCCESS}Success : All tests pass.{Colours.MINOR}");
+	gl.terminate(); #Test shutdown
+	print(f"{Colours.WARNING}[PY ] Module testing terminated {Colours.DEFAULT}");
 	
 
-	"""
-	while (gl.window_open() and (not gl.is_key_held(gl.KEY_ESCAPE))): #Example Main program loop.
-		gl.poll_events(); #Look for events
-
-		#Run stages of frame
-		gl.run(worldspaceShaderID);
-		gl.run(screenspaceShaderID);
-
-		gl.update_window(); #Update the screen with the next frame.
-	"""
+	doExample3D(cameraID, projMat, modlMat);
 
 
-	gl.terminate(); #Test shutdown
-	print(f"{Colours.WARNING}[PY ] Module terminated {Colours.DEFAULT}");
 
 
 

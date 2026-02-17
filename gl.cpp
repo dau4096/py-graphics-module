@@ -41,8 +41,13 @@ void updateWindow() {
 
 void pollEvents() {
 	if (shared::window) {
+		//Keyboard/Mouse events
 		glfwPollEvents();
 		previousKeyMap = currentKeyMap;
+
+		//Cursor movement.
+		previousCursorPosition = currentCursorPosition;
+		glfwGetCursorPos(shared::window, &currentCursorPosition.x, &currentCursorPosition.y);
 	}
 	else {utils::cerr("You need to initialise GL first → gl.init()");}
 }
@@ -71,7 +76,21 @@ void requestClose() {
 	}
 }
 
+glm::vec2 getCursorPos() {
+	return glm::vec2(currentCursorPosition);
+}
 
+glm::vec2 getCursorDelta() {
+	return glm::vec2(currentCursorPosition - previousCursorPosition);
+}
+
+void setCursorPos(glm::vec2 position) {
+	//Defaults to 0, 0 if no arg passed.
+	glfwSetCursorPos(shared::window, position.x, position.y);
+}
+
+void cursorShow() {glfwSetInputMode(shared::window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);}
+void cursorHide() {glfwSetInputMode(shared::window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);}
 
 
 
@@ -159,6 +178,14 @@ PYBIND11_MODULE(gl, m) {
 		.export_values();
 
 
+	//Types of matrix that can be created
+	py::enum_<CameraDirection>(m, documentation::GLenum::CameraDirection) //Camera direction Enum
+		.value("CD_FORWARD", 	CameraDirection::CD_FORWARD)
+		.value("CD_RIGHT", 		CameraDirection::CD_RIGHT)
+		.value("CD_UP", 		CameraDirection::CD_UP)
+		.export_values();
+
+
 	//Maximum quantities of certain types
 	m.attr("MAX_SHADERS")  = constants::misc::MAX_SHADERS;
 	m.attr("MAX_TEXTURES") = constants::misc::MAX_TEXTURES;
@@ -188,6 +215,8 @@ PYBIND11_MODULE(gl, m) {
 		documentation::window::terminate
 	); 
 
+
+	//GLFW events
 	m.def("window_open", &windowOpen, //gl.window_open()
 		documentation::window::windowOpen	
 	);
@@ -210,6 +239,27 @@ PYBIND11_MODULE(gl, m) {
 
 	m.def("poll_events", &pollEvents,
 		documentation::window::poll
+	);
+
+	m.def("get_cursor_position", &getCursorPos, //gl.get_cursor_position()
+		documentation::window::getCursorPos
+	);
+
+	m.def("get_cursor_movement", &getCursorDelta, //gl.get_cursor_movement()
+		documentation::window::cursorDelta
+	);
+
+	m.def("set_cursor_position", &setCursorPos, //gl.set_cursor_position(position=glm.vec2(0.0, 0.0));
+		py::arg("position")=glm::vec2(0.0f, 0.0f),
+		documentation::window::setCursorPos
+	);
+
+	m.def("cursor_show", &cursorShow, //gl.cursor_show();
+		documentation::window::cursorShow
+	);
+
+	m.def("cursor_hide", &cursorHide, //gl.cursor_hide();
+		documentation::window::cursorHide
 	);
 
 
@@ -243,7 +293,8 @@ PYBIND11_MODULE(gl, m) {
 
 
 	m.def("configure", &graphics::configure,
-		py::arg("type") = ST_NONE, documentation::shader::configure
+		py::arg("type")=ST_NONE, py::arg("cull")=false,
+		documentation::shader::configure
 	);
 
 
@@ -273,8 +324,8 @@ PYBIND11_MODULE(gl, m) {
 	);
 
 
-	m.def("camera_up", &graphics::camera::getUp, //gl.camera_up(camera=-1);
-		py::arg("camera"), documentation::camera::getUp
+	m.def("get_camera_direction", &graphics::camera::getDirection, //gl.get_camera_direction(camera=-1, direction=gl.CD_FORWARD);
+		py::arg("camera"), py::arg("direction"), documentation::camera::getDir
 	);
 
 
@@ -302,8 +353,6 @@ PYBIND11_MODULE(gl, m) {
 	m.def("camera_delete", &graphics::camera::remove, //gl.camera_delete(camera=-1);
 		py::arg("camera"), documentation::camera::remove
 	);
-
-
 
 
 

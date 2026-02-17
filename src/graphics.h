@@ -29,7 +29,7 @@ namespace graphics {
 			float fov_deg, float fov_rad, float nz, float fz
 		);
 
-		glm::vec3 getUp(int cameraID);
+		glm::vec3 getDirection(int cameraID, CameraDirection cDir);
 		void setPosition(int cameraID, glm::vec3 position);
 		void setAngle(int cameraID, glm::vec3 angle);
 		void setFOV(int cameraID, float FOVdegrees, float FOVradians);
@@ -43,7 +43,7 @@ namespace graphics {
 	void init(std::string name, glm::ivec2 resolution, const types::GLVersion& version);
 
 	int loadShader(ShaderType type, std::string filePathA, std::string filePathB);
-	void configure(ShaderType type);
+	void configure(ShaderType type, bool cull);
 	bool addUniformValue(int shaderID, std::string uniformName, pybind11::object value);
 	bool addVAO(int shaderID, VAOFormat format, std::vector<float> values, std::vector<int> indicesSigned);
 	bool runShader(int shaderID, glm::uvec3 dispatchSize);

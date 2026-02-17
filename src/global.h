@@ -251,7 +251,6 @@ public:
 			return;
 		}
 		size_t vertexSizeSingular = constants::display::vertexFormatSizeMap.at(format);
-		unsigned int numberOfVertices = vertices.size() / vertexSizeSingular; //3 indices per triangle
 		_call.numberOfIndices = indices.size();
 
 	
@@ -400,7 +399,11 @@ private:
 public:
 	glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 angle = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 up = glm::vec3(0.0f, 0.0f, 1.0f); //Up vector.
+
+	glm::vec3 forward = glm::vec3(0.0f, 1.0f, 0.0f); 	//Forward vector.
+	glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f); 		//Right vector.
+	glm::vec3 up = glm::vec3(0.0f, 0.0f, 1.0f); 		//Up vector.
+
 	float FOV = 0.0f; //Radians
 	float nearZ = -1.0f; //Near plane
 	float farZ = 1.0f; //Far plane

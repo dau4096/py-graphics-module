@@ -140,6 +140,49 @@ Updates the window's framebuffer and other systems.
 //Poll events and keypresses
 inline constexpr const char* poll = R"doc(
 Check for GLFW inputs and events.
+Reccomended to call once per frame, as all key press/release/hold & cursor processing relies on this being called.
+)doc";
+
+
+//Update buffers etc
+inline constexpr const char* getCursorPos = R"doc(
+Get the current cursor position, from the last gl.poll_events() call.
+
+Returns
+-------
+vector[float, float]
+	The "current" cursor position.
+)doc";
+
+
+//Poll events and keypresses
+inline constexpr const char* cursorDelta = R"doc(
+Get the movement (delta) of the cursor between the last 2 gl.poll_events() calls.
+
+Returns
+-------
+vector[float, float]
+	The difference between the 2 cursor positions.
+)doc";
+
+
+//Change cursor position, in pixels.
+inline constexpr const char* setCursorPos = R"doc(
+Sets the cursor position to some new value (In pixels - [0, 0] being the top-left corner of the window.)
+
+Parameters
+----------
+position : vector[float, float]
+	The new cursor position.
+)doc";
+
+
+//Show/Hide cursor.
+inline constexpr const char* cursorShow = R"doc(
+Shows the cursor.
+)doc";
+inline constexpr const char* cursorHide = R"doc(
+Hides the cursor.
 )doc";
 
 }
@@ -193,6 +236,16 @@ MatrixType
 - MAT_ORTHOGRAPHIC : Orthographic matrix, Projection, No distance scaling.
 - MAT_VIEW		   : View matrix, View, Camera translation and rotation.
 - MAT_MODEL		   : Model matrix, Model, Vertex translation, rotation and scale.
+)doc";
+
+
+//Camera directions
+inline constexpr const char* CameraDirection = R"doc(
+CameraDirection
+----------
+- CD_FORWARD    : The direction the camera is looking.
+- CD_RIGHT  	: The direction the right of the screen is.
+- CD_UP 		: The direction the top of the screen is.
 )doc";
 
 
@@ -304,6 +357,8 @@ Parameters
 ----------
 type : ShaderType
 	Type of shader to configure for. See (ShaderType) for info on types.
+cull : bool
+	Whether or not to enable GL_CULL_FACE with ST_WORLDSPACE shaders.
 )doc";
 
 }
@@ -382,18 +437,22 @@ int
 )doc";
 
 
-inline constexpr const char* getUp = R"doc(
-Returns the current up-direction of a camera from its ID.
+//Keeps the doc the same for "forward", "right" and "up" using std::format.
+inline constexpr const char* getDir = R"doc(
+Returns the current ?-direction of a camera from its ID.
 
 Parameters
 ----------
 camera : int
 	The ID of the camera to access.
+direction : CameraDirection
+	The direction to read from this camera. Uses the CameraDirection enum.
+
 
 Returns
 -------
 vector[float, float float]
-	The camera's up-direction.
+	The camera's ?-direction.
 )doc";
 
 
