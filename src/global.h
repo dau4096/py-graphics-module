@@ -142,12 +142,74 @@ public:
 };
 
 
+
+
+class Texture {
+private:
+	bool _valid = false;
+
+public:
+	std::string name = ""; //Used for binding in shaders.
+	bool sampler2D = false;
+	std::string filePath = "";
+	glm::ivec2 resolution = {0, 0};
+	GLuint GLindex = 0;
+	std::pair<GLint, GLint> minMagFilters;
+	std::pair<GLint, GLint> wrap;
+	GLint format = 0;
+
+
+	Texture() = default;
+	Texture(const std::string n, glm::ivec2 res)
+		: name(n), sampler2D(false), resolution(res) {}
+	Texture(const std::string n, const std::string& path, glm::ivec2 res)
+		: name(n), sampler2D(true), filePath(path), resolution(res) {}
+
+	void setValid(bool validity) {_valid = validity;}
+	bool isValid() const {return _valid;}
+
+	void label() {if (GLEW_KHR_debug || GLEW_VERSION_4_3) {glObjectLabel(GL_TEXTURE, GLindex, -1, name.c_str()); /* Label it for debugging. */}}
+
+	//Deletion
+	void destroy() {
+		_valid = false;
+		sampler2D = false;
+		resolution = {0, 0};
+		filePath = ""; name = "";
+		minMagFilters = {}; wrap = {};
+		format = 0;
+
+		//Free texture from OpenGL.
+		glDeleteTextures(1, &GLindex);
+		GLindex = 0;
+	}
+	~Texture() {destroy();}
+};
+
+
+//Contains the values required to bind a texture in a shader.
+struct BoundTexture {
+	GLuint GLindex = 0u;
+	std::string name = "";
+	bool isValid = false;
+	bool isSampler2D = false;
+	GLint format = 0;
+
+	BoundTexture() : isValid(false) {}
+	BoundTexture(Texture& texture)
+		: GLindex(texture.GLindex), name(texture.name), isValid(true),
+		  isSampler2D(texture.sampler2D), format(texture.format) {}
+};
+
+
+
 //Full shader program.
 class ShaderProgram {
 private:
 	GLuint _program = 0u; //OpenGL index
 	bool _linked = false; //Ready to be used or not
 	std::unordered_map<std::string, UniformValue> _uniforms; //Uniforms and their names to bind
+	std::unordered_map<GLuint, BoundTexture> _textures; //GL Indices & data of textures to bind at runtime.
 	ShaderCall _call; //Contains data to be used when doing shader.run();
 
 public:
@@ -188,14 +250,22 @@ public:
 
 
 	//Deletion
-	~ShaderProgram() {
-		if (_program) glDeleteProgram(_program);
+	void destroy() {
+		if (_program) {glDeleteProgram(_program);}
+
+		_program = 0u;
+		_linked = false;
+		_uniforms = {};
+		_textures = {};
+		_call = ShaderCall();
+		type = ST_NONE;
 	}
+	~ShaderProgram() {destroy();}
 
 
 	bool createProgram(std::vector<ShaderObject>& shaders, ShaderType type) {
 		_program = glCreateProgram();
-		for (auto& sh : shaders) {
+		for (ShaderObject& sh : shaders) {
 			if (!sh.compile()) {return false;}
 			glAttachShader(_program, sh.GLindex);
 		}
@@ -224,7 +294,7 @@ public:
 		}
 
 
-		for (auto& sh : shaders) {
+		for (ShaderObject& sh : shaders) {
 			//Delete shader, it has been used.
 			sh.destroy();
 		}
@@ -296,7 +366,7 @@ public:
 		for (const auto& [name, u] : _uniforms) {
 			GLint loc = glGetUniformLocation(_program, name.c_str());
 			if (loc == -1) {continue; /* Invalid location for this shader. */}
-			utils::cout(std::format("Applying uniform of Name=\"{}\"", name));
+			utils::cout(V_DEBUG, std::format("Applying uniform with Name=\"{}\"", name));
 
 			switch (u.type) {
 				case UniformType::UV_FLOAT: {float      data = std::get<float>(u.data);      glUniform1f(loc, data);  break;}
@@ -359,35 +429,35 @@ public:
 		}
 		return true;
 	}
-};
 
 
+	bool bindTexture(GLuint binding, Texture& texture) {
+		if (!texture.isValid()) {
+			utils::cerr("Tried to bind invalid texture");
+			return false;
+		}
 
+		_textures[binding] = BoundTexture(texture); //TBA - implement BoundTexture struct. [NEEDS: isSampelr2D[bool], GLindex[GLuint], format[GLint]]
 
-class Texture {
-private:
-	bool _valid = false;
-	bool _image2D = false;
-	bool _sampler2D = false;
-	std::pair<GLint, GLint> _minMagFilters;
-	std::pair<GLint, GLint> _wrap;
-
-public:
-	GLuint GLindex = 0;
-	glm::ivec2 resolution = {0, 0};
-	std::string filePath;
-
-	Texture() = default;
-	Texture(glm::ivec2 res) : _image2D(true), resolution(res) {}
-	Texture(const std::string& path) : _sampler2D(true), filePath(path) {}
-
-	bool loadTexture() {
-		//TBA
-		_valid = true;
-		return _valid;
+		return true;
 	}
 
-	bool isValid() const {return _valid;}
+
+	void applyTextures() {
+		for (const auto& [binding, bTex] : _textures) {
+			if (bTex.isSampler2D) {
+				utils::cout(V_DEBUG, std::format("Applying texture with Name=\"{}\"", bTex.name));
+				glBindTextureUnit(binding, bTex.GLindex);
+			} else {
+				utils::cout(V_DEBUG, std::format("Applying image with Name=\"{}\"", bTex.name));
+				glBindImageTexture(
+					binding, bTex.GLindex,
+					0, GL_FALSE, 0,
+					GL_READ_WRITE, bTex.format
+				);
+			}
+		}
+	}
 };
 
 
@@ -417,6 +487,7 @@ public:
 
 	bool isValid() {return _valid;}
 
+	//Deletion
 	void destroy() {
 		//Set invalid, and reset to defaults.
 		_valid = false;
@@ -427,6 +498,7 @@ public:
 		nearZ = -1.0f;
 		farZ = 1.0f;
 	}
+	~Camera() {destroy();}
 };
 
 }

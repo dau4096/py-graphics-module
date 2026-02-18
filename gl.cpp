@@ -106,7 +106,7 @@ void manageAddVAO(int shader, VAOFormat format, py::array_t<float> vertArr, py::
 	size_t iSize = iInfo.size;
 	std::vector<int> indices = std::vector<int>(iData, iData + iSize);
 
-	graphics::addVAO(shader, format, vertices, indices);
+	graphics::shader::addVAO(shader, format, vertices, indices);
 }
 
 
@@ -217,7 +217,7 @@ PYBIND11_MODULE(gl, m) {
 
 
 	//GLFW events
-	m.def("window_open", &windowOpen, //gl.window_open()
+	m.def("is_window_open", &windowOpen, //gl.is_window_open()
 		documentation::window::windowOpen	
 	);
 
@@ -254,11 +254,11 @@ PYBIND11_MODULE(gl, m) {
 		documentation::window::setCursorPos
 	);
 
-	m.def("cursor_show", &cursorShow, //gl.cursor_show();
+	m.def("show_cursor", &cursorShow, //gl.show_cursor();
 		documentation::window::cursorShow
 	);
 
-	m.def("cursor_hide", &cursorHide, //gl.cursor_hide();
+	m.def("hide_cursor", &cursorHide, //gl.hide_cursor();
 		documentation::window::cursorHide
 	);
 
@@ -267,14 +267,14 @@ PYBIND11_MODULE(gl, m) {
 
 
 
-	//OpenGL abstractions
-	m.def("load_shader", &graphics::loadShader, //gl.load_shader(type=ST_NONE, filePathA="", filePathB="");
-		py::arg("type"), py::arg("filePathA"),
-		py::arg("filePathB") = "", documentation::shader::load
+	//Shader abstractions
+	m.def("load_shader", &graphics::shader::load, //gl.load_shader(type=ST_NONE, filePathA="", filePathB="");
+		py::arg("type"), py::arg("file_path_A"),
+		py::arg("file_path_B") = "", documentation::shader::load
 	);
 
 
-	m.def("add_uniform_value", &graphics::addUniformValue, //gl.add_uniform_value(shader=-1, name="", value=0.0);
+	m.def("add_uniform_value", &graphics::shader::addUniformValue, //gl.add_uniform_value(shader=-1, name="", value=0.0);
 		py::arg("shader"), py::arg("name"), py::arg("value"), documentation::shader::addUniform
 	);
 
@@ -287,16 +287,42 @@ PYBIND11_MODULE(gl, m) {
 	);
 
 
-	m.def("run", &graphics::runShader, //gl.run(shader=-1, dispatch=(0, 0, 0));
+	m.def("run", &graphics::shader::run, //gl.run(shader=-1, dispatch=(0, 0, 0));
 		py::arg("shader"), py::arg("dispatch")=glm::uvec3(0u, 0u, 0u), documentation::shader::run
 	);
 
 
-	m.def("configure", &graphics::configure,
+	m.def("configure", &graphics::shader::configure,
 		py::arg("type")=ST_NONE, py::arg("cull")=false,
 		documentation::shader::configure
 	);
 
+
+
+	//Texture abstractions
+	m.def("load_texture", &graphics::texture::load, //gl.load_texture(file_path="", name="");
+		py::arg("file_path"), py::arg("name")="",
+		documentation::texture::load
+	);
+
+	m.def("save_texture", &graphics::texture::save, //gl.save_texture(texture=-1, file_path="");
+		py::arg("texture"), py::arg("file_path"),
+		documentation::texture::save
+	);
+
+	m.def("create_texture", &graphics::texture::create, //gl.create_texture(file_path="", name="");
+		py::arg("resolution"), py::arg("name")="",
+		documentation::texture::create
+	);
+
+	m.def("add_texture", &graphics::texture::bind, //gl.add_texture(shader=-1, texture=-1, binding=0);
+		py::arg("shader"), py::arg("texture"), py::arg("binding"),
+		documentation::texture::bind
+	);
+
+	m.def("delete_texture", &graphics::texture::remove, //gl.delete_texture(texture=-1);
+		py::arg("texture"), documentation::texture::remove
+	);
 
 
 
@@ -314,7 +340,7 @@ PYBIND11_MODULE(gl, m) {
 
 
 	//Camera
-	m.def("new_camera", &graphics::camera::assign, //gl.new_camera(position=(0, 0, 0), angle=(0, 0, 0), up=(0, 0, 1), fov_deg=0.0, fov_rad=0.0, near_z=-1.0, far_z=1.0);
+	m.def("create_camera", &graphics::camera::assign, //gl.create_camera(position=(0, 0, 0), angle=(0, 0, 0), up=(0, 0, 1), fov_deg=0.0, fov_rad=0.0, near_z=-1.0, far_z=1.0);
 		py::arg("position")=glm::vec3(0.0f, 0.0f, 0.0f), //Initial position
 		py::arg("angle")=glm::vec3(0.0f, 0.0f, 0.0f), //Initial angle (Yaw, Pitch, Roll)
 		py::arg("up")=glm::vec3(0.0f, 0.0f, 1.0f), //Up direction
@@ -329,28 +355,28 @@ PYBIND11_MODULE(gl, m) {
 	);
 
 
-	m.def("camera_set_new_position", &graphics::camera::setPosition, //gl.camera_set_new_position(camera=-1, position=(0, 0, 0));
+	m.def("set_new_camera_position", &graphics::camera::setPosition, //gl.set_new_camera_position(camera=-1, position=(0, 0, 0));
 		py::arg("camera"), py::arg("position"), documentation::camera::newPos
 	);
 
 
-	m.def("camera_set_new_angle", &graphics::camera::setAngle, //gl.camera_set_new_angle(camera=-1, angle=(0, 0, 0));
+	m.def("set_new_camera_angle", &graphics::camera::setAngle, //gl.set_new_camera_angle(camera=-1, angle=(0, 0, 0));
 		py::arg("camera"), py::arg("angle"), documentation::camera::newAng
 	);
 
 
-	m.def("camera_set_new_fov", &graphics::camera::setFOV, //gl.camera_set_new_fov(camera=-1, fov_deg=0.0, fov_rad=0.0);
+	m.def("set_new_camera_fov", &graphics::camera::setFOV, //gl.set_new_camera_fov(camera=-1, fov_deg=0.0, fov_rad=0.0);
 		py::arg("camera"), py::arg("fov_deg")=0.0f, py::arg("fov_rad")=0.0f,
 		documentation::camera::newFOV
 	);
 
 
-	m.def("camera_set_new_clip", &graphics::camera::setZclip, //gl.camera_set_new_clip(camera=-1, z_near=0.0, z_far=0.0);
+	m.def("set_new_camera_clip", &graphics::camera::setZclip, //gl.set_new_camera_clip(camera=-1, z_near=0.0, z_far=0.0);
 		py::arg("camera"), py::arg("z_near")=0.0f, py::arg("z_far")=0.0f,
 		documentation::camera::newClip
 	);
 
-	m.def("camera_delete", &graphics::camera::remove, //gl.camera_delete(camera=-1);
+	m.def("delete_camera", &graphics::camera::remove, //gl.delete_camera(camera=-1);
 		py::arg("camera"), documentation::camera::remove
 	);
 

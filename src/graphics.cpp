@@ -10,6 +10,17 @@
 #include "typecast.h"
 //////// PY MODULE ////////
 
+
+
+//////// STBI ////////
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+
+#include <stb_image.h>
+#include <stb_image_write.h>
+//////// STBI ////////
+
+
 using namespace std;
 namespace py = pybind11;
 
@@ -471,63 +482,147 @@ void remove(int cameraID) {
 
 
 
+namespace texture {
 
-void init(std::string name, glm::ivec2 resolution, const types::GLVersion& openGLVersion) {
-	if (shared::window) {return; /* GLFW window already active */}
-	utils::cout(std::format(
-		"Initialising OpenGL version [{}.{}0 {}]",
-		openGLVersion.major, openGLVersion.minor, ((openGLVersion.embedded) ? "ES" : "CORE")
-	));
-	if (!openGLVersion.valid()) {
-		//Version is too old. Do not allow.
+int load(std::string filePath, std::string name) {
+	if (shared::numberOfTextures >= constants::misc::MAX_TEXTURES) {
 		utils::cerr(std::format(
-			"OpenGL Version too old. Oldest supported versions are [3.30 CORE / 3.10 ES]. Attempted: [{}.{}0 {}]",
-			openGLVersion.major, openGLVersion.minor, ((openGLVersion.embedded) ? "ES" : "CORE")
+			"Exceeded maximum number of allowed textures [{} > {}]",
+			shared::numberOfTextures, constants::misc::MAX_TEXTURES
 		));
-		return;
-	}
-	shared::windowResolution = resolution;
-
-
-	//GLFW
-	if (!glfwInit()) {
-		//GLFW is not initialised properly
-		utils::cerr("Failed to init GLFW");
-	}
-	if ((resolution.x < 1) || (resolution.y < 1)) {
-		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-	}
-	openGLVersion.use();
-	shared::window = glfwCreateWindow(resolution.x, resolution.y, name.c_str(), nullptr, nullptr);
-	if (!shared::window) {
-		//GLFW could not create window.
-		utils::cerr("Failed to create window");
-	}
-	glfwMakeContextCurrent(shared::window);
-	glfwSetKeyCallback(shared::window, glfwKeyCallback);
-
-
-	//GLEW
-	glewExperimental = GL_TRUE;
-	if (glewInit() != GLEW_OK) {
-		utils::cerr("Failed to initialize GLEW");
-		exit(1);
+		return -1;
 	}
 
 
-	//OpenGL
-	prepareOpenGL();
+	//Load texture data from file
+	int width, height, channels;
+	unsigned char* textureData = stbi_load(
+		filePath.c_str(),
+		&width, &height,
+		&channels, 4
+	);
+	if (!textureData) {
+		utils::cerr(std::format("Could not open filepath: {}", filePath));
+		return -1;
+	}
 
 
+	//Create struct instance.
+	types::Texture& tex = shared::textures[shared::numberOfTextures];
+	tex = types::Texture(name, filePath, glm::ivec2(width, height));
+	tex.filePath = filePath; //Empty
+	tex.minMagFilters = std::pair<GLint, GLint>{
+		GL_LINEAR, GL_LINEAR
+	};
+	tex.wrap = std::pair<GLint, GLint>{
+		GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE
+	};
+	tex.format = GL_RGBA8;
 
-	shared::init = true;
-	utils::cout("Successfully loaded GL-Module");
+
+	
+	//Create texture in OpenGL.
+	glGenTextures(1, &tex.GLindex);
+	glBindTexture(GL_TEXTURE_2D, tex.GLindex);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex.minMagFilters.first);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex.minMagFilters.second);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, tex.wrap.first);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, tex.wrap.second);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	stbi_image_free(textureData); //Free STBI image in memory
+
+
+	tex.label();
+	tex.setValid(true);
+	return shared::numberOfTextures++;
+}
+
+
+int create(glm::ivec2 resolution, std::string name) {
+	if (shared::numberOfTextures >= constants::misc::MAX_TEXTURES) {
+		utils::cerr(std::format(
+			"Exceeded maximum number of allowed textures [{} > {}]",
+			shared::numberOfTextures, constants::misc::MAX_TEXTURES
+		));
+	}
+
+
+	//Create struct instance.
+	types::Texture& tex = shared::textures[shared::numberOfTextures];
+	tex = types::Texture(name, resolution);
+	tex.filePath = ""; //Empty
+	tex.minMagFilters = std::pair<GLint, GLint>{
+		GL_NEAREST, GL_NEAREST
+	};
+	tex.wrap = std::pair<GLint, GLint>{
+		GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE
+	};
+	tex.format = GL_RGBA32F;
+
+	
+	//Create texture in OpenGL.
+	glGenTextures(1, &tex.GLindex);
+	glBindTexture(GL_TEXTURE_2D, tex.GLindex);
+
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, resolution.x, resolution.y);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex.minMagFilters.first);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex.minMagFilters.second);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, tex.wrap.first);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, tex.wrap.second);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+
+	tex.label();
+	tex.setValid(true);
+	return shared::numberOfTextures++;
+}
+
+
+bool bind(int shaderID, int textureID, int binding) {
+	if (IDnotInRange(shaderID, constants::misc::MAX_SHADERS)) {
+		utils::cerr(std::format("Shader ID [{}] is invalid : Out of range [0 - {}]", shaderID, constants::misc::MAX_SHADERS));
+	}
+	if (IDnotInRange(textureID, constants::misc::MAX_TEXTURES)) {
+		utils::cerr(std::format("Texture ID [{}] is invalid : Out of range [0 - {}]", textureID, constants::misc::MAX_TEXTURES));
+	}
+
+
+	return shared::shaders[shaderID].bindTexture(
+		binding, shared::textures[textureID]
+	);
+}
+
+
+void save(int textureID, std::string filePath) {
+	//TBA
+}
+
+
+void remove(int textureID) {
+	if (IDnotInRange(textureID, constants::misc::MAX_TEXTURES)) {
+		utils::cerr(std::format("Texture ID [{}] is invalid : Out of range [0 - {}]", textureID, constants::misc::MAX_TEXTURES));
+	}
+
+	shared::textures[textureID].destroy();
+}
+
 }
 
 
 
 
-int loadShader(ShaderType type, std::string filePathA, std::string filePathB) {
+
+
+namespace shader {
+
+
+int load(ShaderType type, std::string filePathA, std::string filePathB) {
 	if (!shared::init) {
 		utils::cerr("You need to initialise GL first → gl.init()");
 		return -1;
@@ -611,15 +706,77 @@ bool addVAO(int shaderID, VAOFormat format, std::vector<float> vertices, std::ve
 }
 
 
-bool runShader(int shaderID, glm::uvec3 dispatchSize) {
+bool run(int shaderID, glm::uvec3 dispatchSize) {
 	if (IDnotInRange(shaderID, constants::misc::MAX_SHADERS)) {
 		utils::cerr(std::format("Shader ID [{}] is invalid : Out of range [0 - {}]", shaderID, constants::misc::MAX_SHADERS));
 	}
 	types::ShaderProgram& shader = shared::shaders[shaderID];
 
 	shader.use();
+	shader.applyTextures();
 	shader.applyUniforms();
 	return shader.run(dispatchSize, shaderID);
+}
+
+
+}
+
+
+
+
+
+
+
+void init(std::string name, glm::ivec2 resolution, const types::GLVersion& openGLVersion) {
+	if (shared::window) {return; /* GLFW window already active */}
+	utils::cout(std::format(
+		"Initialising OpenGL version [{}.{}0 {}]",
+		openGLVersion.major, openGLVersion.minor, ((openGLVersion.embedded) ? "ES" : "CORE")
+	));
+	if (!openGLVersion.valid()) {
+		//Version is too old. Do not allow.
+		utils::cerr(std::format(
+			"OpenGL Version too old. Oldest supported versions are [3.30 CORE / 3.10 ES]. Attempted: [{}.{}0 {}]",
+			openGLVersion.major, openGLVersion.minor, ((openGLVersion.embedded) ? "ES" : "CORE")
+		));
+		return;
+	}
+	shared::windowResolution = resolution;
+
+
+	//GLFW
+	if (!glfwInit()) {
+		//GLFW is not initialised properly
+		utils::cerr("Failed to init GLFW");
+	}
+	if ((resolution.x < 1) || (resolution.y < 1)) {
+		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+	}
+	openGLVersion.use();
+	shared::window = glfwCreateWindow(resolution.x, resolution.y, name.c_str(), nullptr, nullptr);
+	if (!shared::window) {
+		//GLFW could not create window.
+		utils::cerr("Failed to create window");
+	}
+	glfwMakeContextCurrent(shared::window);
+	glfwSetKeyCallback(shared::window, glfwKeyCallback);
+
+
+	//GLEW
+	glewExperimental = GL_TRUE;
+	if (glewInit() != GLEW_OK) {
+		utils::cerr("Failed to initialize GLEW");
+		exit(1);
+	}
+
+
+	//OpenGL
+	prepareOpenGL();
+
+
+
+	shared::init = true;
+	utils::cout("Successfully loaded GL-Module");
 }
 
 
@@ -634,6 +791,11 @@ void terminate() {
 
 		shared::numberOfShaders = 0u;
 		shared::numberOfTextures = 0u;
+		shared::numberOfCameras = 0u;
+
+		for (auto& s : shared::shaders)  {s.destroy();}
+		for (auto& t : shared::textures) {t.destroy();}
+		for (auto& c : shared::cameras)  {c.destroy();}
 
 		utils::cout("Successfully terminated GL");
 	} else {

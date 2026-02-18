@@ -273,9 +273,9 @@ Parameters
 ----------
 type : ShaderType
 	The type of shader to create.
-filePathA : str, optional
+file_path_A : str, optional
 	The first file to load from. Only required for types other than ST_NONE.
-filePathB : str, optional
+file_path_B : str, optional
 	The second file to load from. Only required for ST_WORLDSPACE.
 	
 Raises
@@ -359,6 +359,104 @@ type : ShaderType
 	Type of shader to configure for. See (ShaderType) for info on types.
 cull : bool
 	Whether or not to enable GL_CULL_FACE with ST_WORLDSPACE shaders.
+)doc";
+
+}
+
+
+namespace texture {
+
+//Load a texture file.
+inline constexpr const char* load = R"doc(
+Loads a given texture file from its filepath. If path is invalid, raises an error.
+
+Parameters
+----------
+file_path : str
+	The path of the file to load.
+
+Returns
+-------
+int
+	The index of this new texture.
+
+Raises
+------
+RuntimeError
+	If the filepath was invalid, or maximum texture count was reached.
+)doc";
+
+
+//Creates a GL_IMAGE2D type.
+inline constexpr const char* create = R"doc(
+Creates a blank texture with a given resolution.
+
+Parameters
+----------
+resolution : vector[int, int]
+	The resolution to create the image with.
+
+Returns
+-------
+int
+	The index of this new texture.
+
+Raises
+------
+RuntimeError
+	If the resolution was invalid, or maximum texture count was reached.
+)doc";
+
+
+//Adds an image/texture to a shader's list to be bound at runtime.
+inline constexpr const char* bind = R"doc(
+Adds a texture to a shader, to be automatically used when it is run.
+
+Parameters
+----------
+shader : int
+	Which shader (by index) to apply it to.
+texture : int
+	The index of the texture to add.
+
+Raises
+------
+RuntimeError
+	If the shader or texture ID were invalid.
+)doc";
+
+
+//Saves an image/texture to a file.
+inline constexpr const char* save = R"doc(
+Saves a texture to a file on the disk.
+
+Parameters
+----------
+texture : int
+	Which texture (by index) to save.
+file_path : int
+	The filepath to save to.
+
+Raises
+------
+RuntimeError
+	If the shader or texture ID were invalid.
+)doc";
+
+
+//"Deletes"/"Destroys" a texture instance.
+inline constexpr const char* remove = R"doc(
+Creates a blank texture with a given resolution.
+
+Parameters
+----------
+texture : int
+	The texture to remove/"delete".
+
+Raises
+------
+RuntimeError
+	If the index was invalid.
 )doc";
 
 }

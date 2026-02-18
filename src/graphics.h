@@ -40,14 +40,28 @@ namespace graphics {
 	}
 
 
+	namespace texture {
+
+		int load(std::string filePath, std::string name);
+		int create(glm::ivec2 resolution, std::string name);
+		void bind(int shaderID, int textureID, int binding);
+		void save(int textureID, std::string filePath);
+		void remove(int textureID);
+
+	}
+
+	namespace shader {
+
+		int load(ShaderType type, std::string filePathA, std::string filePathB);
+		void configure(ShaderType type, bool cull);
+		bool addUniformValue(int shaderID, std::string uniformName, pybind11::object value);
+		bool addVAO(int shaderID, VAOFormat format, std::vector<float> values, std::vector<int> indicesSigned);
+		bool run(int shaderID, glm::uvec3 dispatchSize);
+
+	}
+
+
 	void init(std::string name, glm::ivec2 resolution, const types::GLVersion& version);
-
-	int loadShader(ShaderType type, std::string filePathA, std::string filePathB);
-	void configure(ShaderType type, bool cull);
-	bool addUniformValue(int shaderID, std::string uniformName, pybind11::object value);
-	bool addVAO(int shaderID, VAOFormat format, std::vector<float> values, std::vector<int> indicesSigned);
-	bool runShader(int shaderID, glm::uvec3 dispatchSize);
-
 	void terminate();
 
 }
