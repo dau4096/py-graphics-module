@@ -1,13 +1,11 @@
 #Compilation
 *.o
-*.exe
-*.ini
-program
+*.so
+*.pyd
+build/*
 
 
 #Libraries
-*.so
-*.pyd
 *.dylib
 *.lai
 *.la
