@@ -119,6 +119,12 @@ struct Attribute {
 	GLint size;
 };
 
+struct ImageReadFormat {
+    GLenum format;
+    GLenum type;
+    int channels;
+};
+
 
 namespace shared {inline Verbosity verbose = V_SILENT; /* Should module give console output for actions taken? */}
 
@@ -140,7 +146,7 @@ namespace constants {
 		//Access via constants::display::value
 		inline GLuint emptyVAO;
 
-		static const std::unordered_map<VAOFormat, size_t> vertexFormatSizeMap = {
+		static const std::map<VAOFormat, size_t> vertexFormatSizeMap = {
 			{VAO_EMPTY, 0u}, {VAO_POS_ONLY, 3u}, {VAO_POS_NORMAL, 6u},
 			{VAO_POS_UV2D, 5u}, {VAO_POS_UV3D, 6u},
 			{VAO_POS_UV2D_NORMAL, 8u}, {VAO_POS_UV3D_NORMAL, 9u},
@@ -153,6 +159,23 @@ namespace constants {
 			{VAO_POS_NORMAL,     	{{3}, {3},     }},
 			{VAO_POS_UV2D_NORMAL,	{{3}, {2}, {3},}},
 			{VAO_POS_UV3D_NORMAL,	{{3}, {3}, {3},}},
+		};
+
+		static const std::map<GLint, ImageReadFormat> imgFormatMap = {
+			{GL_R8,        {GL_RED,  GL_UNSIGNED_BYTE, 1}},
+			{GL_RG8,       {GL_RG,   GL_UNSIGNED_BYTE, 2}},
+			{GL_RGB8,      {GL_RGB,  GL_UNSIGNED_BYTE, 3}},
+			{GL_RGBA8,     {GL_RGBA, GL_UNSIGNED_BYTE, 4}},
+
+			{GL_R16F,      {GL_RED,  GL_FLOAT, 1}},
+			{GL_RG16F,     {GL_RG,   GL_FLOAT, 2}},
+			{GL_RGB16F,    {GL_RGB,  GL_FLOAT, 3}},
+			{GL_RGBA16F,   {GL_RGBA, GL_FLOAT, 4}},
+
+			{GL_R32F,      {GL_RED,  GL_FLOAT, 1}},
+			{GL_RG32F,     {GL_RG,   GL_FLOAT, 2}},
+			{GL_RGB32F,    {GL_RGB,  GL_FLOAT, 3}},
+			{GL_RGBA32F,   {GL_RGBA, GL_FLOAT, 4}},
 		};
 	}
 

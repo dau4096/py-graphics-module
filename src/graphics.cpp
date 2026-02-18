@@ -496,6 +496,7 @@ int load(std::string filePath, std::string name) {
 
 	//Load texture data from file
 	int width, height, channels;
+	stbi_set_flip_vertically_on_load(true);
 	unsigned char* textureData = stbi_load(
 		filePath.c_str(),
 		&width, &height,
@@ -509,7 +510,7 @@ int load(std::string filePath, std::string name) {
 
 	//Create struct instance.
 	types::Texture& tex = shared::textures[shared::numberOfTextures];
-	tex = types::Texture(name, filePath, glm::ivec2(width, height));
+	tex = types::Texture(name, filePath, glm::ivec2(width, height), channels, GL_RGBA8);
 	tex.filePath = filePath; //Empty
 	tex.minMagFilters = std::pair<GLint, GLint>{
 		GL_LINEAR, GL_LINEAR
@@ -517,7 +518,6 @@ int load(std::string filePath, std::string name) {
 	tex.wrap = std::pair<GLint, GLint>{
 		GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE
 	};
-	tex.format = GL_RGBA8;
 
 
 	
@@ -542,7 +542,7 @@ int load(std::string filePath, std::string name) {
 }
 
 
-int create(glm::ivec2 resolution, std::string name) {
+int create(glm::ivec2 resolution, glm::vec4 fillColour, std::string name) {
 	if (shared::numberOfTextures >= constants::misc::MAX_TEXTURES) {
 		utils::cerr(std::format(
 			"Exceeded maximum number of allowed textures [{} > {}]",
@@ -561,14 +561,14 @@ int create(glm::ivec2 resolution, std::string name) {
 	tex.wrap = std::pair<GLint, GLint>{
 		GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE
 	};
-	tex.format = GL_RGBA32F;
 
 	
 	//Create texture in OpenGL.
 	glGenTextures(1, &tex.GLindex);
 	glBindTexture(GL_TEXTURE_2D, tex.GLindex);
 
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, resolution.x, resolution.y);
+	glTexStorage2D(GL_TEXTURE_2D, 1, tex.format, resolution.x, resolution.y);
+	glClearTexImage(tex.GLindex, 0, GL_RGBA, GL_FLOAT, glm::value_ptr(fillColour));
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex.minMagFilters.first);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex.minMagFilters.second);
@@ -600,7 +600,26 @@ bool bind(int shaderID, int textureID, int binding) {
 
 
 void save(int textureID, std::string filePath) {
-	//TBA
+	if (IDnotInRange(textureID, constants::misc::MAX_TEXTURES)) {
+		utils::cerr(std::format("Texture ID [{}] is invalid : Out of range [0 - {}]", textureID, constants::misc::MAX_TEXTURES));
+	}
+	types::Texture& tex = shared::textures[textureID];
+	ImageReadFormat iRF = constants::display::imgFormatMap.at(tex.format);
+
+	std::vector<unsigned char> pixels(tex.resolution.x * tex.resolution.y * iRF.channels);
+
+	//Take texture data from GPU
+	glGetTextureImage(
+		tex.GLindex, 0, iRF.format,
+		GL_UNSIGNED_BYTE, pixels.size(), pixels.data()
+	);
+
+	//Write to file
+	stbi_flip_vertically_on_write(true);
+	stbi_write_png(
+		filePath.c_str(), tex.resolution.x, tex.resolution.y,
+		iRF.channels, pixels.data(), tex.resolution.x * iRF.channels
+	);
 }
 
 

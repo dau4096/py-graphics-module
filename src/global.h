@@ -153,6 +153,7 @@ public:
 	bool sampler2D = false;
 	std::string filePath = "";
 	glm::ivec2 resolution = {0, 0};
+	int channels = 0;
 	GLuint GLindex = 0;
 	std::pair<GLint, GLint> minMagFilters;
 	std::pair<GLint, GLint> wrap;
@@ -161,20 +162,23 @@ public:
 
 	Texture() = default;
 	Texture(const std::string n, glm::ivec2 res)
-		: name(n), sampler2D(false), resolution(res) {}
-	Texture(const std::string n, const std::string& path, glm::ivec2 res)
-		: name(n), sampler2D(true), filePath(path), resolution(res) {}
+		: name(n), sampler2D(false), resolution(res), channels(4), format(GL_RGBA32F) {}
+	Texture(const std::string n, const std::string& path, glm::ivec2 res, int ch, GLint fmt)
+		: name(n), sampler2D(true), filePath(path), resolution(res), channels(ch), format(fmt) {}
 
 	void setValid(bool validity) {_valid = validity;}
 	bool isValid() const {return _valid;}
 
-	void label() {if (GLEW_KHR_debug || GLEW_VERSION_4_3) {glObjectLabel(GL_TEXTURE, GLindex, -1, name.c_str()); /* Label it for debugging. */}}
+	void label() {
+		if (GLEW_KHR_debug || GLEW_VERSION_4_3) {glObjectLabel(GL_TEXTURE, GLindex, -1, name.c_str()); /* Label it for debugging. */}
+	}
 
 	//Deletion
 	void destroy() {
 		_valid = false;
 		sampler2D = false;
 		resolution = {0, 0};
+		int channels = 0;
 		filePath = ""; name = "";
 		minMagFilters = {}; wrap = {};
 		format = 0;
@@ -427,6 +431,8 @@ public:
 			}
 			default: {return false; /* Unknown type */}
 		}
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 		return true;
 	}
 

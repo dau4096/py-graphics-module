@@ -310,8 +310,8 @@ PYBIND11_MODULE(gl, m) {
 		documentation::texture::save
 	);
 
-	m.def("create_texture", &graphics::texture::create, //gl.create_texture(file_path="", name="");
-		py::arg("resolution"), py::arg("name")="",
+	m.def("create_texture", &graphics::texture::create, //gl.create_texture(file_path="", fill_colour=(0.0f, 0.0f, 0.0f, 0.0f), name="");
+		py::arg("resolution"), py::arg("fill_colour")=glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), py::arg("name")="",
 		documentation::texture::create
 	);
 

@@ -1,0 +1,67 @@
+/* cell.example.comp */
+//file from a [https://github.com/TheMightyHowitzer] project.
+#version 460 core
+
+layout(local_size_x=16, local_size_y=16, local_size_z=1) in;
+
+layout(binding=0) uniform sampler2D terrainMap;
+layout(rgba32f, binding=1) uniform image2D currentGrid;
+layout(rgba32f, binding=2) uniform image2D futureGrid;
+
+
+
+uniform vec2 gS;
+
+
+
+
+void main() {
+	ivec2 gridSize = ivec2(gS);
+
+    float kelvin = 273.15;
+    float cHumi;
+    float baseEvap = 0.017;
+    float maxSat;
+    float rh;
+    float rd;
+    float baseH;
+    float cPres;
+    float cTempC; // <-- declare the one you use
+
+    ivec2 id = ivec2(gl_GlobalInvocationID.xy);
+    if (id.x >= gridSize.x || id.y >= gridSize.y) return;
+
+    vec2 uv = vec2(id) / vec2(gridSize);
+    vec4 terrainData = texture(terrainMap, uv);
+
+    vec4 currentCellData = imageLoad(currentGrid, id);
+    vec4 newCellData = currentCellData;
+
+    ivec2 leftPos  = id + ivec2(-1, 0);
+    ivec2 rightPos = id + ivec2( 1, 0);
+
+    // WARNING: clamp to avoid OOB (recommended)
+    leftPos  = clamp(leftPos,  ivec2(0), gridSize - ivec2(1));
+    rightPos = clamp(rightPos, ivec2(0), gridSize - ivec2(1));
+
+    vec4 left  = imageLoad(currentGrid, leftPos);
+    vec4 right = imageLoad(currentGrid, rightPos);
+
+    cTempC = currentCellData.r - kelvin;
+    cHumi = currentCellData.b;
+    cPres = currentCellData.g;
+
+    maxSat = 6.11 * exp((17.27 * cTempC) / (cTempC + 237.3));
+    rh = cHumi / maxSat;
+    rd = 1.0 - rh;
+
+    baseH = cHumi + ((baseEvap * rd) / cPres);
+
+    //newCellData.b = baseH; // (maybe you meant baseH?)
+    newCellData.r= 1;
+    newCellData.g= 1;
+    newCellData.b= 1;
+    newCellData.a= 1;
+
+    imageStore(futureGrid, id, newCellData);
+}

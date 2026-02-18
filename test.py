@@ -81,10 +81,10 @@ def doExample3D() -> None:
 	#Bind a VAO with positions & 2D UV.
 	vertices:list[float] = [
 		#Example dataset of vertices.
-		-1.0,  1.0,  0.0,	 0.0, 0.0,
-		 1.0,  1.0,  0.0,    1.0, 1.0,
-		 0.0,  1.0,  1.0,    1.0, 0.0,
-		 0.0,  1.0, -1.0,    0.0, 1.0,
+		-1.0,  1.0,  0.0,	 0.0, 1.0,
+		 1.0,  1.0,  0.0,    1.0, 0.0,
+		 0.0,  1.0,  1.0,    1.0, 1.0,
+		 0.0,  1.0, -1.0,    0.0, 0.0,
 	];
 	indices:list[int] = [
 		#Singular triangle.
@@ -267,11 +267,12 @@ def main() -> None:
 	i2D:int = gl.create_texture(glm.ivec2(128, 128));
 	assert (i2D != -1), "Failed to create image2D";
 
+	print(f"{Colours.MAJOR}[PY ] Testing texture saving to file{Colours.MINOR}");
+	gl.save_texture(s2D, "textures/test.out.png"); #Save the image2D to a file.
+
 	print(f"{Colours.MAJOR}[PY ] Testing texture deletion{Colours.MINOR}");
 	gl.delete_texture(s2D); #Delete the loaded image.
 
-	print(f"{Colours.MAJOR}[PY ] Testing texture saving to file{Colours.MINOR}");
-	gl.save_texture(i2D, "textures/test.out.png"); #Save the image2D to a file.
 
 
 
