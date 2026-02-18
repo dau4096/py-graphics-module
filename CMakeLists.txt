@@ -9,6 +9,8 @@ find_package(pybind11 REQUIRED)
 
 
 #Pybind11 module
+set(PYBIND11_PYTHON_VERSION 3.12)
+set(PYBIND11_FINDPYTHON ON)
 pybind11_add_module(gl
     gl.cpp
     src/graphics.cpp
@@ -24,6 +26,7 @@ find_package(glm REQUIRED)
 
 #Include headers
 target_include_directories(gl PRIVATE glm)
+target_include_directories(gl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 #Link libraries

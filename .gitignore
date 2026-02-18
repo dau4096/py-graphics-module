@@ -3,6 +3,7 @@
 *.so
 *.pyd
 build/*
+stb*.h
 
 
 #Libraries

@@ -45,7 +45,7 @@ namespace graphics {
 		int load(std::string filePath, std::string name);
 		void save(int textureID, std::string filePath);
 		int create(glm::ivec2 resolution, glm::vec4 fillColour, std::string name);
-		void bind(int shaderID, int textureID, int binding);
+		bool bind(int shaderID, int textureID, int binding);
 		void remove(int textureID);
 
 	}

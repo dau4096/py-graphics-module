@@ -8,7 +8,12 @@ if exist build (
 
 ECHO Config CMAKE..
 REM Uses vcpkg to manage libraries. EXE in C:\vcpkg.
-cmake -B build -G "Visual Studio 17 2022" -A x64 -D BUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake -B build ^
+ -G "Visual Studio 17 2022" ^
+ -A x64 ^
+ -DCMAKE_TOOLCHAIN_FILE=D:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake ^
+ -DVCPKG_TARGET_TRIPLET=x64-windows-static
+
 
 if %errorlevel% neq 0 (
 	ECHO CMAKE config failed.
