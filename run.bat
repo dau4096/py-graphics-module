@@ -7,7 +7,8 @@ if exist build (
 )
 
 ECHO Config CMAKE..
-cmake -B build -G "Visual Studio 17 2022" -A x64 -D BUILD_SHARED_LIBS=OFF
+REM Uses vcpkg to manage libraries. EXE in C:\vcpkg.
+cmake -B build -G "Visual Studio 17 2022" -A x64 -D BUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
 if %errorlevel% neq 0 (
 	ECHO CMAKE config failed.
