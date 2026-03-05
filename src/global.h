@@ -93,6 +93,44 @@ struct ShaderCall {
 
 
 
+
+//Allows for `#include <filepath>` pseudo-includes.
+static unsigned int lineNumberAt(const std::string& s, size_t pos) {
+	//Find [#line] number from position
+    return std::count(s.begin(), s.begin() + pos, '\n');
+}
+
+static std::string preprocessIncludes(const std::string& source, const std::string& currentFile) {
+    std::regex includeRegex(R"(^\s*#include\s*<([^>]+)>)", std::regex_constants::multiline);
+
+    std::string result;
+    std::sregex_iterator it(source.begin(), source.end(), includeRegex);
+    std::sregex_iterator end;
+
+    size_t lastPos = 0;
+    for (; it!=end; it++) {
+        const std::smatch& match = *it;
+
+        //Copy text before include
+        result.append(source.substr(lastPos, match.position() - lastPos));
+
+        std::string includePath = match[1].str();
+
+        std::string includedSource = utils::readFile(includePath);
+
+        unsigned int includeLine = lineNumberAt(source, match.position());
+
+        result += "#line 1 \"src/shaders/"+includePath+".glsl\"\n"+includedSource+"\n"+"#line "+std::to_string(includeLine+1u)+" \""+currentFile+"\"\n";
+
+        lastPos = match.position() + match.length();
+    }
+
+    // Append remaining source
+    result.append(source.substr(lastPos));
+
+    return result;
+}
+
 //Singular part of a shader. Vertex, Fragment, Compute.
 class ShaderObject {
 public:
@@ -118,8 +156,10 @@ public:
 	~ShaderObject() {destroy();}
 
 	bool compile() {
-		GLindex = glCreateShader(type);
+		source = preprocessIncludes(source, name);
 		const char* srcC = source.c_str();
+
+		GLindex = glCreateShader(type);
 		glShaderSource(GLindex, 1, &srcC, nullptr);
 		glCompileShader(GLindex);
 
