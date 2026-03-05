@@ -47,31 +47,31 @@ struct GLVersion {
 
 //Different types of uniform accepted.
 using UniformStorage = std::variant<
-    float,
-    int,
-    glm::vec2, glm::ivec2, //2D vectors
-    glm::vec3, glm::ivec3, //3D vectors
-    glm::vec4, glm::ivec4, //4D vectors
-    glm::mat3, glm::mat4   //Matrices
+	float,
+	int,
+	glm::vec2, glm::ivec2, //2D vectors
+	glm::vec3, glm::ivec3, //3D vectors
+	glm::vec4, glm::ivec4, //4D vectors
+	glm::mat3, glm::mat4   //Matrices
 >;
 
 //Inside 1 struct type.
 struct UniformValue {
-    UniformType type = UV_INVAL;
-    UniformStorage data;
+	UniformType type = UV_INVAL;
+	UniformStorage data;
 
-    UniformValue() : type(UV_INVAL), data(0.0f) {}
-    UniformValue(float v)      : type(UV_FLOAT), data(v) {}
-    UniformValue(int v)        : type(UV_INTEG), data(v) {}
-    UniformValue(bool v)       : type(UV_INTEG), data(v ? 1 : 0) {}
-    UniformValue(glm::vec2 v)  : type(UV_FVEC2), data(v) {}
-    UniformValue(glm::ivec2 v) : type(UV_IVEC2), data(v) {}
-    UniformValue(glm::vec3 v)  : type(UV_FVEC3), data(v) {}
-    UniformValue(glm::ivec3 v) : type(UV_IVEC3), data(v) {}
-    UniformValue(glm::vec4 v)  : type(UV_FVEC4), data(v) {}
-    UniformValue(glm::ivec4 v) : type(UV_IVEC4), data(v) {}
-    UniformValue(glm::mat3 v)  : type(UV_MAT33), data(v) {}
-    UniformValue(glm::mat4 v)  : type(UV_MAT44), data(v) {}
+	UniformValue() : type(UV_INVAL), data(0.0f) {}
+	UniformValue(float v)      : type(UV_FLOAT), data(v) {}
+	UniformValue(int v)        : type(UV_INTEG), data(v) {}
+	UniformValue(bool v)       : type(UV_INTEG), data(v ? 1 : 0) {}
+	UniformValue(glm::vec2 v)  : type(UV_FVEC2), data(v) {}
+	UniformValue(glm::ivec2 v) : type(UV_IVEC2), data(v) {}
+	UniformValue(glm::vec3 v)  : type(UV_FVEC3), data(v) {}
+	UniformValue(glm::ivec3 v) : type(UV_IVEC3), data(v) {}
+	UniformValue(glm::vec4 v)  : type(UV_FVEC4), data(v) {}
+	UniformValue(glm::ivec4 v) : type(UV_IVEC4), data(v) {}
+	UniformValue(glm::mat3 v)  : type(UV_MAT33), data(v) {}
+	UniformValue(glm::mat4 v)  : type(UV_MAT44), data(v) {}
 };
 
 
@@ -97,38 +97,40 @@ struct ShaderCall {
 //Allows for `#include <filepath>` pseudo-includes.
 static unsigned int lineNumberAt(const std::string& s, size_t pos) {
 	//Find [#line] number from position
-    return std::count(s.begin(), s.begin() + pos, '\n');
+	return std::count(s.begin(), s.begin() + pos, '\n');
 }
 
 static std::string preprocessIncludes(const std::string& source, const std::string& currentFile) {
-    std::regex includeRegex(R"(^\s*#include\s*<([^>]+)>)", std::regex_constants::multiline);
+	std::regex includeRegex = std::regex(
+    	R"((^|\n)\s*#include\s*<([^>]+)>)"
+	);
 
-    std::string result;
-    std::sregex_iterator it(source.begin(), source.end(), includeRegex);
-    std::sregex_iterator end;
+	std::string result;
+	std::sregex_iterator it(source.begin(), source.end(), includeRegex);
+	std::sregex_iterator end;
 
-    size_t lastPos = 0;
-    for (; it!=end; it++) {
-        const std::smatch& match = *it;
+	size_t lastPos = 0;
+	for (; it!=end; it++) {
+		const std::smatch& match = *it;
 
-        //Copy text before include
-        result.append(source.substr(lastPos, match.position() - lastPos));
+		//Copy text before include
+		result.append(source.substr(lastPos, match.position() - lastPos));
 
-        std::string includePath = match[1].str();
+		std::string includePath = match[1].str();
 
-        std::string includedSource = utils::readFile(includePath);
+		std::string includedSource = utils::readFile(includePath);
 
-        unsigned int includeLine = lineNumberAt(source, match.position());
+		unsigned int includeLine = lineNumberAt(source, match.position());
 
-        result += "#line 1 \"src/shaders/"+includePath+".glsl\"\n"+includedSource+"\n"+"#line "+std::to_string(includeLine+1u)+" \""+currentFile+"\"\n";
+		result += "#line 1 \"src/shaders/"+includePath+".glsl\"\n"+includedSource+"\n"+"#line "+std::to_string(includeLine+1u)+" \""+currentFile+"\"\n";
 
-        lastPos = match.position() + match.length();
-    }
+		lastPos = match.position() + match.length();
+	}
 
-    // Append remaining source
-    result.append(source.substr(lastPos));
+	// Append remaining source
+	result.append(source.substr(lastPos));
 
-    return result;
+	return result;
 }
 
 //Singular part of a shader. Vertex, Fragment, Compute.
