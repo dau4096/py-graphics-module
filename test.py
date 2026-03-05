@@ -7,7 +7,6 @@ import gl;
 
 ######## ANSI COLOURS ########
 
-
 class Colours:
 	ERROR:str 		= "\033[1;31m"; #Red
 	SUCCESS:str		= "\033[1;32m"; #Green
@@ -16,7 +15,6 @@ class Colours:
 	MAJOR:str 		= "\033[0;36m"; #White
 	VALUE:str 		= "\033[0;35m"; #Purple
 	DEFAULT:str 	= "\033[0;39m"; #Reset
-
 
 ######## ANSI COLOURS ########
 
@@ -39,9 +37,9 @@ MOVE_SPEED:float = 0.1;
 
 def updateCamera(cameraID:int) -> None:
 	#Get cursor & keyboard inputs and upd the camera.
-	forward:glm.vec3 = glm.vec3(gl.get_camera_direction(cameraID, gl.CD_FORWARD));
-	right:glm.vec3 = glm.vec3(gl.get_camera_direction(cameraID, gl.CD_RIGHT));
-	up:glm.vec3 = glm.vec3(gl.get_camera_direction(cameraID, gl.CD_UP));
+	forward:glm.vec3 = glm.vec3(gl.get_camera_direction(cameraID, gl.FORWARD));
+	right:glm.vec3 = glm.vec3(gl.get_camera_direction(cameraID, gl.RIGHT));
+	up:glm.vec3 = glm.vec3(gl.get_camera_direction(cameraID, gl.UP));
 	fb:int = 0; lr:int = 0; ud:int = 0;
 
 	if (gl.is_key_held(gl.KEY_W)): fb += 1;
@@ -76,7 +74,7 @@ def doExample3D() -> None:
 	cameraID:int = gl.create_camera(fov_deg=70.0, near_z=0.1, far_z=100.0);
 
 	#Load the shader.
-	shaderID:int = gl.load_shader(gl.ST_WORLDSPACE, "shaders/worldspace.vert", "shaders/uv.3D.frag");
+	shaderID:int = gl.load_shader(gl.WORLDSPACE, vertex="shaders/worldspace.vert", fragment="shaders/uv.3D.frag");
 
 	#Bind a VAO with positions & 2D UV.
 	vertices:list[float] = [
@@ -92,7 +90,7 @@ def doExample3D() -> None:
 		0, 1, 3,
 	];
 	#Add the VAO to the shader;
-	gl.add_vao(shaderID, gl.VAO_POS_UV2D, vertices, indices);
+	gl.add_vao(shaderID, gl.POS_UV2D, vertices, indices);
 
 
 	#Load the texture to be used;
@@ -101,11 +99,11 @@ def doExample3D() -> None:
 
 
 	#Create unchanging matrices;
-	projMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.MAT_PERSPECTIVE, cameraID));
-	modlMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.MAT_IDENTITY)); #Identity for now.
+	projMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.PERSPECTIVE, cameraID));
+	modlMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.IDENTITY)); #Identity for now.
 
 
-	gl.verbose(gl.V_SILENT);
+	gl.set_output(gl.SILENT);
 	while (gl.is_window_open() and (not gl.is_key_held(gl.KEY_ESCAPE))): #Example Main program loop.
 		gl.poll_events(); #Look for events
 
@@ -114,7 +112,7 @@ def doExample3D() -> None:
 		updateCamera(cameraID);
 
 		#Matrix creation
-		viewMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.MAT_VIEW, cameraID));
+		viewMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.VIEW, cameraID));
 		pvmMatrix:glm.mat4 = projMat * viewMat * modlMat;
 		gl.add_uniform_value(shaderID, "pvmMatrix", pvmMatrix);
 
@@ -141,10 +139,10 @@ def doExample3D() -> None:
 
 def screenspaceShader() -> None:
 	print(f"{Colours.MAJOR}[PY ] Testing Screenspace Shader;{Colours.MINOR}");
-	gl.configure(gl.ST_SCREENSPACE); #Set to use settings for screenspace shaders
+	gl.configure(gl.SCREENSPACE); #Set to use settings for screenspace shaders
 
 	#Load shader from file.
-	shaderID:int = gl.load_shader(gl.ST_SCREENSPACE, "shaders/uv.2D.frag");
+	shaderID:int = gl.load_shader(gl.SCREENSPACE, fragment="shaders/uv.2D.frag");
 	assert (shaderID != -1), "Screenspace Shader failed to be loaded.";
 
 	#Attempt to bind some unifom values
@@ -167,10 +165,10 @@ def screenspaceShader() -> None:
 
 def computeShader() -> None:
 	print(f"{Colours.MAJOR}[PY ] Testing Compute Shader;{Colours.MINOR}");
-	gl.configure(gl.ST_COMPUTE); #Set to use settings for compute shaders
+	gl.configure(gl.COMPUTE); #Set to use settings for compute shaders
 
 	#Load shader from file.
-	shaderID:int = gl.load_shader(gl.ST_COMPUTE, "shaders/compute.comp");
+	shaderID:int = gl.load_shader(gl.COMPUTE, compute="shaders/compute.comp");
 	assert (shaderID != -1), "Compute Shader failed to be loaded.";
 
 	#Test different dispatch sizes
@@ -191,17 +189,17 @@ def computeShader() -> None:
 def worldspaceShader(cameraID:int) -> None:
 	#Test matrices work;
 	print(f"{Colours.MAJOR}[PY ] Testing matrices{Colours.MINOR}");
-	projMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.MAT_PERSPECTIVE, cameraID));
-	viewMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.MAT_VIEW, cameraID));
-	modlMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.MAT_IDENTITY)); #Identity for now.
+	projMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.PERSPECTIVE, cameraID));
+	viewMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.VIEW, cameraID));
+	modlMat:glm.mat4 = glm.mat4(gl.get_matrix(gl.IDENTITY)); #Identity for now.
 	pvmMatrix:glm.mat4 = projMat * viewMat * modlMat;
 
 
 	print(f"{Colours.MAJOR}[PY ] Testing Worldspace Shader;{Colours.MINOR}");
-	gl.configure(gl.ST_WORLDSPACE); #Set to use settings for worldspace shaders
+	gl.configure(gl.WORLDSPACE); #Set to use settings for worldspace shaders
 
 	#Load shader from files.
-	shaderID:int = gl.load_shader(gl.ST_WORLDSPACE, "shaders/worldspace.vert", "shaders/uv.3D.frag");
+	shaderID:int = gl.load_shader(gl.WORLDSPACE, "shaders/worldspace.vert", "shaders/uv.3D.frag");
 	assert (shaderID != -1), "Worldspace Shader failed to be loaded.";
 
 	#Bind a VAO with positions & 2D UV.
@@ -211,7 +209,7 @@ def worldspaceShader(cameraID:int) -> None:
 		 1.0,  1.0,  0.0,    1.0, 0.0,
 		 0.0,  1.0,  1.0,    0.0, 1.0,
 	];
-	gl.add_vao(shaderID, gl.VAO_POS_UV2D, vertices);
+	gl.add_vao(shaderID, gl.POS_UV2D, vertices);
 
 
 	#Add the PVM matrix as a uniform value
@@ -236,7 +234,7 @@ def worldspaceShader(cameraID:int) -> None:
 
 def main() -> None:
 	print(f"{Colours.WARNING}[PY ] Running test python script;{Colours.MINOR}");
-	gl.verbose(gl.V_MINIMAL); #Let it output to console.
+	gl.set_output(gl.MINIMAL); #Let it output to console.
 
 
 	#Test init func

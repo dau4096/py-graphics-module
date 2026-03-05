@@ -641,16 +641,16 @@ void remove(int textureID) {
 namespace shader {
 
 
-int load(ShaderType type, std::string filePathA, std::string filePathB) {
+int load(ShaderType type, std::string vertex, std::string fragment, std::string compute) {
 	if (!shared::init) {
 		utils::cerr("You need to initialise GL first → gl.init()");
 		return -1;
 	}
 
 	switch (type) {
-		case ST_COMPUTE:     {return compiler::computeShader(filePathA);}
-		case ST_SCREENSPACE: {return compiler::screenspaceShader(filePathA);}
-		case ST_WORLDSPACE:  {return compiler::worldspaceShader(filePathA, filePathB);}
+		case ST_COMPUTE:     {return compiler::computeShader(compute);}
+		case ST_SCREENSPACE: {return compiler::screenspaceShader(fragment);}
+		case ST_WORLDSPACE:  {return compiler::worldspaceShader(vertex, fragment);}
 		default:             {return -1; /* Invalid, unknown. */}
 	}
 	return -1; //Fallback

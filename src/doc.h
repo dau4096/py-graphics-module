@@ -196,9 +196,9 @@ namespace GLenum {
 inline constexpr const char* Verbosity = R"doc(
 Verbosity
 ----------
-- V_SILENT  : No console output from module.
-- V_MINIMAL : Some console output - usually what stage was applied.
-- V_DEBUG   : Used for debugging values and calls.
+- Verbosity.SILENT  : No console output from module.
+- Verbosity.MINIMAL : Some console output - usually what stage was applied.
+- Verbosity.DEBUG   : Used for debugging values and calls.
 )doc";
 
 
@@ -206,10 +206,10 @@ Verbosity
 inline constexpr const char* ShaderType = R"doc(
 ShaderType
 ----------
-- ST_NONE        : No shader.
-- ST_WORLDSPACE  : Shader on 3D geometry.
-- ST_SCREENSPACE : Shader in screenspace, 2D.
-- ST_COMPUTE     : Compute shader.
+- ShaderType.NONE        : No shader.
+- ShaderType.WORLDSPACE  : Shader on 3D geometry.
+- ShaderType.SCREENSPACE : Shader in screenspace, 2D.
+- ShaderType.COMPUTE     : Compute shader.
 )doc";
 
 
@@ -217,13 +217,13 @@ ShaderType
 inline constexpr const char* VAOFormat = R"doc(
 VAOFormat
 ---------
-- VAO_EMPTY           : Empty VAO. No data.
-- VAO_POS_ONLY        : Only 3D position attribute.
-- VAO_POS_UV2D        : Position and 2D UV.
-- VAO_POS_UV3D        : Position and 3D UV (Z used for texture index)
-- VAO_POS_NORMAL      : Position and 3D Normal vector
-- VAO_POS_UV2D_NORMAL : Position, 2D UV and 3D Normal vector.
-- VAO_POS_UV3D_NORMAL : Position, 3D UV and 3D Normal vector. (Z used for texture index)
+- VAOFormat.EMPTY           : Empty VAO. No data.
+- VAOFormat.POS_ONLY        : Only 3D position attribute.
+- VAOFormat.POS_UV2D        : Position and 2D UV.
+- VAOFormat.POS_UV3D        : Position and 3D UV (Z used for texture index)
+- VAOFormat.POS_NORMAL      : Position and 3D Normal vector
+- VAOFormat.POS_UV2D_NORMAL : Position, 2D UV and 3D Normal vector.
+- VAOFormat.POS_UV3D_NORMAL : Position, 3D UV and 3D Normal vector. (Z used for texture index)
 )doc";
 
 
@@ -231,11 +231,11 @@ VAOFormat
 inline constexpr const char* MatrixType = R"doc(
 MatrixType
 ----------
-- MAT_IDENTITY     : Identity matrix. Applies nothing when used.
-- MAT_PERSPECTIVE  : Perspective matrix, Projection, Has distance scaling.
-- MAT_ORTHOGRAPHIC : Orthographic matrix, Projection, No distance scaling.
-- MAT_VIEW		   : View matrix, View, Camera translation and rotation.
-- MAT_MODEL		   : Model matrix, Model, Vertex translation, rotation and scale.
+- MatrixType.IDENTITY     : Identity matrix. Applies nothing when used.
+- MatrixType.PERSPECTIVE  : Perspective matrix, Projection, Has distance scaling.
+- MatrixType.ORTHOGRAPHIC : Orthographic matrix, Projection, No distance scaling.
+- MatrixType.VIEW		  : View matrix, View, Camera translation and rotation.
+- MatrixType.MODEL		  : Model matrix, Model, Vertex translation, rotation and scale.
 )doc";
 
 
@@ -243,9 +243,9 @@ MatrixType
 inline constexpr const char* CameraDirection = R"doc(
 CameraDirection
 ----------
-- CD_FORWARD    : The direction the camera is looking.
-- CD_RIGHT  	: The direction the right of the screen is.
-- CD_UP 		: The direction the top of the screen is.
+- CameraDirection.FORWARD : The direction the camera is looking.
+- CameraDirection.RIGHT   : The direction the right of the screen is.
+- CameraDirection.UP 	  : The direction the top of the screen is.
 )doc";
 
 
@@ -260,13 +260,13 @@ namespace shader {
 inline constexpr const char* load = R"doc(
 Creates a shader.
 For types;
-- ST_NONE
+- ShaderType.NONE
   = No files required
-- ST_WORLDSPACE
+- ShaderType.WORLDSPACE
   = vertex filepath, fragment filepath
-- ST_SCREENSPACE
+- ShaderType.SCREENSPACE
   = fragment filepath
-- ST_COMPUTE
+- ShaderType.COMPUTE
   = compute filepath
 
 Parameters
@@ -274,9 +274,9 @@ Parameters
 type : ShaderType
 	The type of shader to create.
 file_path_A : str, optional
-	The first file to load from. Only required for types other than ST_NONE.
+	The first file to load from. Only required for types other than ShaderType.NONE.
 file_path_B : str, optional
-	The second file to load from. Only required for ST_WORLDSPACE.
+	The second file to load from. Only required for ShaderType.WORLDSPACE.
 	
 Raises
 ------
@@ -358,7 +358,7 @@ Parameters
 type : ShaderType
 	Type of shader to configure for. See (ShaderType) for info on types.
 cull : bool
-	Whether or not to enable GL_CULL_FACE with ST_WORLDSPACE shaders.
+	Whether or not to enable GL_CULL_FACE with ShaderType.WORLDSPACE shaders.
 )doc";
 
 }

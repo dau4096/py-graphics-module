@@ -141,48 +141,48 @@ PYBIND11_MODULE(gl, m) {
 	//Values/Enums
 	//Level of verbosity
 	py::enum_<Verbosity>(m, documentation::GLenum::Verbosity) //Level of console output permitted
-		.value("V_SILENT",  Verbosity::V_SILENT)
-		.value("V_MINIMAL", Verbosity::V_MINIMAL)
-		.value("V_DEBUG",   Verbosity::V_DEBUG)
+		.value("SILENT",  Verbosity::V_SILENT)
+		.value("MINIMAL", Verbosity::V_MINIMAL)
+		.value("DEBUG",   Verbosity::V_DEBUG)
 		.export_values();
 
 
 	//gl Shader types
 	py::enum_<ShaderType>(m, documentation::GLenum::ShaderType) //Shader Type Enum
-		.value("ST_NONE", 			ShaderType::ST_NONE)
-		.value("ST_WORLDSPACE", 	ShaderType::ST_WORLDSPACE)
-		.value("ST_SCREENSPACE", 	ShaderType::ST_SCREENSPACE)
-		.value("ST_COMPUTE", 		ShaderType::ST_COMPUTE)
+		.value("NONE", 			ShaderType::ST_NONE)
+		.value("WORLDSPACE", 	ShaderType::ST_WORLDSPACE)
+		.value("SCREENSPACE", 	ShaderType::ST_SCREENSPACE)
+		.value("COMPUTE", 		ShaderType::ST_COMPUTE)
 		.export_values();
 
 
 	//gl VAO formats
 	py::enum_<VAOFormat>(m, documentation::GLenum::VAOFormat) //VAO Format Enum
-		.value("VAO_EMPTY", 			VAOFormat::VAO_EMPTY)
-		.value("VAO_POS_ONLY", 			VAOFormat::VAO_POS_ONLY)
-		.value("VAO_POS_UV2D", 			VAOFormat::VAO_POS_UV2D)
-		.value("VAO_POS_UV3D", 			VAOFormat::VAO_POS_UV3D)
-		.value("VAO_POS_NORMAL", 		VAOFormat::VAO_POS_NORMAL)
-		.value("VAO_POS_UV2D_NORMAL", 	VAOFormat::VAO_POS_UV2D_NORMAL)
-		.value("VAO_POS_UV3D_NORMAL", 	VAOFormat::VAO_POS_UV3D_NORMAL)
+		.value("EMPTY", 			VAOFormat::VAO_EMPTY)
+		.value("POS_ONLY", 			VAOFormat::VAO_POS_ONLY)
+		.value("POS_UV2D", 			VAOFormat::VAO_POS_UV2D)
+		.value("POS_UV3D", 			VAOFormat::VAO_POS_UV3D)
+		.value("POS_NORMAL", 		VAOFormat::VAO_POS_NORMAL)
+		.value("POS_UV2D_NORMAL", 	VAOFormat::VAO_POS_UV2D_NORMAL)
+		.value("POS_UV3D_NORMAL", 	VAOFormat::VAO_POS_UV3D_NORMAL)
 		.export_values();
 
 
 	//Types of matrix that can be created
 	py::enum_<MatrixType>(m, documentation::GLenum::MatrixType) //Matrix Type Enum
-		.value("MAT_IDENTITY", 	MatrixType::MAT_IDENTITY)
-		.value("MAT_PERSPECTIVE", 	MatrixType::MAT_PERSPECTIVE)
-		.value("MAT_ORTHOGRAPHIC", 	MatrixType::MAT_ORTHOGRAPHIC)
-		.value("MAT_VIEW", 			MatrixType::MAT_VIEW)
-		.value("MAT_MODEL", 		MatrixType::MAT_MODEL)
+		.value("IDENTITY", 		MatrixType::MAT_IDENTITY)
+		.value("PERSPECTIVE", 	MatrixType::MAT_PERSPECTIVE)
+		.value("ORTHOGRAPHIC", 	MatrixType::MAT_ORTHOGRAPHIC)
+		.value("VIEW", 			MatrixType::MAT_VIEW)
+		.value("MODEL", 		MatrixType::MAT_MODEL)
 		.export_values();
 
 
 	//Types of matrix that can be created
 	py::enum_<CameraDirection>(m, documentation::GLenum::CameraDirection) //Camera direction Enum
-		.value("CD_FORWARD", 	CameraDirection::CD_FORWARD)
-		.value("CD_RIGHT", 		CameraDirection::CD_RIGHT)
-		.value("CD_UP", 		CameraDirection::CD_UP)
+		.value("FORWARD", 	CameraDirection::CD_FORWARD)
+		.value("RIGHT", 	CameraDirection::CD_RIGHT)
+		.value("UP", 		CameraDirection::CD_UP)
 		.export_values();
 
 
@@ -201,7 +201,7 @@ PYBIND11_MODULE(gl, m) {
 
 
 	//Manager Functions
-	m.def("verbose", setVerbosity, //gl.verbose() [Should the file give console output for actions taken?]
+	m.def("set_output", setVerbosity, //gl.set_output() [Should the file give console output for actions taken?]
 		py::arg("level")=V_SILENT, documentation::meta::verbose
 	);
 
@@ -226,7 +226,7 @@ PYBIND11_MODULE(gl, m) {
 	);
 
 	m.def("is_key_held", &keyHeld, //gl.is_key_held()
-		py::arg("keyis_key_held"), documentation::window::isKeyHeld
+		py::arg("key"), documentation::window::isKeyHeld
 	);
 
 	m.def("was_key_released", &keyReleased, //gl.was_key_released()
@@ -268,9 +268,9 @@ PYBIND11_MODULE(gl, m) {
 
 
 	//Shader abstractions
-	m.def("load_shader", &graphics::shader::load, //gl.load_shader(type=ST_NONE, filePathA="", filePathB="");
-		py::arg("type"), py::arg("file_path_A"),
-		py::arg("file_path_B") = "", documentation::shader::load
+	m.def("load_shader", &graphics::shader::load, //gl.load_shader(type=ST_NONE, vertex="", fragment="", compute="");
+		py::arg("type"), py::arg("vertex")="", py::arg("fragment")="",
+		py::arg("compute")="", documentation::shader::load
 	);
 
 

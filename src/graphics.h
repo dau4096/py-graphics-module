@@ -52,7 +52,7 @@ namespace graphics {
 
 	namespace shader {
 
-		int load(ShaderType type, std::string filePathA, std::string filePathB);
+		int load(ShaderType type, std::string vertex, std::string fragment, std::string compute);
 		void configure(ShaderType type, bool cull);
 		bool addUniformValue(int shaderID, std::string uniformName, pybind11::object value);
 		bool addVAO(int shaderID, VAOFormat format, std::vector<float> values, std::vector<int> indicesSigned);

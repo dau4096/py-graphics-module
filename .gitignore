@@ -3,6 +3,7 @@
 *.so
 *.pyd
 build/*
+release/*
 stb*.h
 
 
